@@ -9,6 +9,12 @@ import { PageHeader } from "@/components/sentinel/page-header";
 import { deployments, incidents, logs, services, tasks, timeline } from "@/lib/data";
 
 export default function Home() {
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+
+
+
   return (
     <AppShell>
       <PageHeader eyebrow="Live command center" title="AI-native incident operations" action="Create incident" />
