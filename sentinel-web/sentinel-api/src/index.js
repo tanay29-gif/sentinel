@@ -8,6 +8,7 @@ const { createAiRoutes } = require("./routes/aiRoutes");
 const { createHealthRoutes } = require("./routes/healthRoutes");
 const { createIncidentsRoutes } = require("./routes/incidentsRoutes");
 const { createLogsRoutes } = require("./routes/logsRoutes");
+const { createCommitsRoutes } = require("./routes/commitsRoutes");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -31,6 +32,7 @@ const dependencies = { groq, supabase };
 
 app.use(createHealthRoutes(dependencies));
 app.use("/api/incidents", createIncidentsRoutes(dependencies));
+app.use("/api/commits", createCommitsRoutes(dependencies));
 app.use("/api/ai", createAiRoutes(dependencies));
 app.use("/api/logs", createLogsRoutes(dependencies));
 

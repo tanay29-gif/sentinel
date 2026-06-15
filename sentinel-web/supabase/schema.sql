@@ -109,6 +109,47 @@ create table public.incident_events (
   created_at timestamptz not null default now()
 );
 
+-- 1. Repositories Table (The Parent for all code)
+create table public.repositories (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  name text not null,               -- e.g. "frontend-app"
+  full_name text not null unique,    -- e.g. "my-org/frontend-app"
+  provider text default 'github',
+  html_url text,                    -- Link to GitHub repo
+  default_branch text default 'main',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 2. Branches Table (Linked to Repository)
+create table public.branches (
+  id uuid primary key default gen_random_uuid(),
+  repository_id uuid not null references public.repositories(id) on delete cascade,
+  name text not null,               -- e.g. "main", "feature/login"
+  is_default boolean default false,
+  created_at timestamptz not null default now(),
+  unique(repository_id, name)
+);
+
+-- 3. Commits Table (Linked to Repository and Branch)
+create table public.commits (
+  id uuid primary key default gen_random_uuid(),
+  repository_id uuid not null references public.repositories(id) on delete cascade,
+  branch_id uuid references public.branches(id) on delete cascade,
+  sha text not null unique,
+  message text not null,
+  author_handle text,
+  author_avatar_url text,
+  committed_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+-- 4. Update Deployments (Link to Repository ID instead of just text)
+alter table public.deployments 
+add column if not exists repository_id uuid references public.repositories(id) on delete cascade;
+
+
 -- Helper function to check team membership
 create or replace function public.is_team_member(team_id uuid)
 returns boolean as $$

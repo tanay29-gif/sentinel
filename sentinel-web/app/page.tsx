@@ -5,15 +5,107 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppShell } from "@/components/sentinel/app-shell";
 import { MetricCard } from "@/components/sentinel/metric-card";
+import { getGitHubClient, fetchUserRepositories, fetchBranches, fetchRecentCommits } from "@/lib/supabase/github-client";
+import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/sentinel/page-header";
 import { deployments, incidents, logs, services, tasks, timeline } from "@/lib/data";
 
-export default function Home() {
+export default async function Home() {
+  const { user, supabase } = await getGitHubClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+  if (!user.user_metadata?.first_sync_done) {
+    console.log("Performing first time GitHub data sync...");
+    
+    let { data: team } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('slug', user.user_metadata?.user_name || user.id)
+      .maybeSingle();
+      
+
+// add this to ui that the it is maunully creating hte team wiht the name but in the ui you have to add make team feature 
 
 
 
+
+    if (!team) {
+      const { data: newTeam } = await supabase
+        .from('teams')
+        .insert({ 
+          name: user.user_metadata?.full_name || user.user_metadata?.user_name || 'My Team', 
+          slug: user.user_metadata?.user_name || user.id 
+        })
+        .select()
+        .maybeSingle();
+      team = newTeam;
+    }
+
+    if (team) {
+      const repos = await fetchUserRepositories();
+      for (const repoName of repos) {
+        const { data: repo } = await supabase
+          .from('repositories')
+          .upsert({ 
+             team_id: team.id,
+             name: repoName.split('/')[1] || repoName,
+             full_name: repoName,
+             provider: 'github'
+          }, { onConflict: 'full_name' })
+          .select()
+          .maybeSingle();
+          
+        if (repo) {
+          const branches = await fetchBranches(repoName);
+          for (const branch of branches) {
+            await supabase
+              .from('branches')
+              .upsert({
+                repository_id: repo.id,
+                name: branch.name,
+                is_default: branch.name === 'main' || branch.name === 'master'
+              }, { onConflict: 'repository_id, name' });
+          }
+        }
+      }
+      
+      const commits = await fetchRecentCommits(repos);
+      for (const c of commits) {
+         const { data: repo } = await supabase
+           .from('repositories')
+           .select('id')
+           .eq('full_name', c.repo)
+           .maybeSingle();
+           
+         if (repo) {
+            let branchId = null;
+            const { data: branch } = await supabase
+              .from('branches')
+              .select('id')
+              .eq('repository_id', repo.id)
+              .eq('name', c.branch)
+              .maybeSingle();
+              
+            if (branch) branchId = branch.id;
+            
+            await supabase
+              .from('commits')
+              .upsert({
+                 repository_id: repo.id,
+                 branch_id: branchId,
+                 sha: c.commit,
+                 message: c.message,
+                 author_handle: c.author,
+                 committed_at: new Date().toISOString()
+              }, { onConflict: 'sha' });
+         }
+      }
+      
+      await supabase.auth.updateUser({
+         data: { first_sync_done: true }
+      });
+      console.log("First time GitHub data sync complete.");
+    }
+  }
 
   return (
     <AppShell>

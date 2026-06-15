@@ -2,24 +2,21 @@
 import { Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createClient();
   console.log("Supabase client initialized:", supabase);
   const handleGitHubLogin = async () => {
     try {
       setIsLoading(true);
       
       // Use ngrok URL for callback in development to avoid SSL issues with localhost
-      const baseUrl = process.env.NEXT_PUBLIC_NGROK_URL || window.location.origin;
-      const callbackUrl = new URL("/auth/callback", baseUrl).toString();
+      const origin = window.location.origin;
+      const callbackUrl = new URL("/auth/callback", origin).toString();
       
       console.log("GitHub OAuth callback URL:", callbackUrl);
       

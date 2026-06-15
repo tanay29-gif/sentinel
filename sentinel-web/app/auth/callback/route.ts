@@ -17,9 +17,8 @@ export async function GET(request: NextRequest) {
       error: error || 'Authentication failed',
       error_description: errorDescription || 'An error occurred during authentication',
     })
-    // Redirect to localhost error page after auth fails
-    const localhost = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-    return NextResponse.redirect(`${localhost}/auth/auth-error?${errorParams}`)
+    // Redirect to origin error page after auth fails
+    return NextResponse.redirect(`${origin}/auth/auth-error?${errorParams}`)
   }
 
   if (code) {
@@ -35,15 +34,10 @@ export async function GET(request: NextRequest) {
           error: 'Code exchange failed',
           error_description: exchangeError.message || 'Failed to exchange code for session',
         })
-        // Redirect to localhost error page after code exchange fails
-        const localhost = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-        return NextResponse.redirect(`${localhost}/auth/auth-error?${errorParams}`)
+        return NextResponse.redirect(`${origin}/auth/auth-error?${errorParams}`)
       }
 
-      // After successful auth, redirect to localhost (not ngrok)
-      const localhost = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-
-      return NextResponse.redirect(`${localhost}${next}`)
+      return NextResponse.redirect(`${origin}${next}`)
 
     } catch (err) {
       console.error('Callback route error:', err)
@@ -52,10 +46,7 @@ export async function GET(request: NextRequest) {
         error_description: 'An unexpected error occurred during authentication',
       })
 
-      
-      // Redirect to localhost error page on catch
-      const localhost = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-      return NextResponse.redirect(`${localhost}/auth/auth-error?${errorParams}`)
+      return NextResponse.redirect(`${origin}/auth/auth-error?${errorParams}`)
     }
   }
 
