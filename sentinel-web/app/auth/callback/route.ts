@@ -2,13 +2,30 @@ import { NextResponse, NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const url = new URL(request.url)
+  const searchParams = url.searchParams
+
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host")
+
+  const protocol =
+    request.headers.get("x-forwarded-proto") ?? "https"
+
+  const origin = `${protocol}://${host}`
+
   const code = searchParams.get('code')
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
 
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/'
+
+  // console.log("NEXT =", next)
+  console.log("request.url =", request.url)
+  console.log("host =", request.headers.get("host"))
+  console.log("x-forwarded-host =", request.headers.get("x-forwarded-host"))
+  console.log("x-forwarded-proto =", request.headers.get("x-forwarded-proto"))
 
   // Handle OAuth errors from GitHub/Supabase
   if (error) {
@@ -26,7 +43,13 @@ export async function GET(request: NextRequest) {
       const supabase = await createClient()
 
       // This trades the code for a session and stores it in cookies
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+      // console.log("EXCHANGE DATA:", data);
+      console.log("EXCHANGE ERROR:", exchangeError);
+      // console.log("data coNTAins the user ", data.user)
+      // console.log("SESSION:", data.session);
+      // console.log("PROVIDER TOKEN:", data.session?.provider_token);
 
       if (exchangeError) {
         console.error('Code exchange error:', exchangeError)
@@ -36,6 +59,7 @@ export async function GET(request: NextRequest) {
         })
         return NextResponse.redirect(`${origin}/auth/auth-error?${errorParams}`)
       }
+      console.log("url", `${origin}${next}`)
 
       return NextResponse.redirect(`${origin}${next}`)
 

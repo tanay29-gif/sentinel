@@ -9,7 +9,7 @@ import { useState } from "react";
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
-  console.log("Supabase client initialized:", supabase);
+
   const handleGitHubLogin = async () => {
     try {
       setIsLoading(true);
@@ -24,9 +24,12 @@ export default function AuthPage() {
         provider: 'github',
         options: {
           redirectTo: callbackUrl,
+          scopes: 'repo read:user',
         },
       });
       
+      console.log("GitHub login data:", data);
+
       if (error) {
         console.error("GitHub login error:", error);
         setIsLoading(false);

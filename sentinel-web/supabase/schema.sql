@@ -17,6 +17,15 @@ create table public.teams (
   created_at timestamptz not null default now()
 );
 
+create table public.memberships (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role public.member_role not null default 'viewer',
+  created_at timestamptz not null default now(),
+  unique(team_id, user_id)
+);
+
 -- Store communication channels (Slack/Discord) linked to specific incidents
 create table public.incident_channels (
   id uuid primary key default gen_random_uuid(),
@@ -162,18 +171,99 @@ $$ language sql security definer;
 
 -- Apply to all major tables
 alter table public.incidents enable row level security;
+alter table public.memberships enable row level security;
+alter table public.repositories enable row level security;
+alter table public.branches enable row level security;
+alter table public.commits enable row level security;
+alter table public.deployments enable row level security;
+alter table public.logs enable row level security;
+
+create index if not exists idx_memberships_user_id on public.memberships(user_id);
+create index if not exists idx_memberships_team_id on public.memberships(team_id);
+create index if not exists idx_deployments_team_id on public.deployments(team_id);
+create index if not exists idx_logs_team_id on public.logs(team_id);
+
+create policy "Users can view their memberships" on public.memberships
+  for select using (user_id = auth.uid());
+
+create policy "Users can create their owner membership" on public.memberships
+  for insert with check (user_id = auth.uid() and role = 'owner');
+
 create policy "Team members can view incidents" on public.incidents
   for select using (is_team_member(team_id));
 
 create policy "Team members can create incidents" on public.incidents
   for insert with check (is_team_member(team_id));
 
--- Similarly for logs, deployments, and services
-alter table public.deployments enable row level security;
+create policy "Team members can view repositories" on public.repositories
+  for select using (is_team_member(team_id));
+
+create policy "Team members can create repositories" on public.repositories
+  for insert with check (is_team_member(team_id));
+
+create policy "Team members can update repositories" on public.repositories
+  for update using (is_team_member(team_id));
+
+create policy "Team members can view branches" on public.branches
+  for select using (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = branches.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can create branches" on public.branches
+  for insert with check (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = branches.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can update branches" on public.branches
+  for update using (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = branches.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can view commits" on public.commits
+  for select using (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = commits.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can create commits" on public.commits
+  for insert with check (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = commits.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can update commits" on public.commits
+  for update using (
+    exists (
+      select 1 from public.repositories
+      where repositories.id = commits.repository_id
+      and is_team_member(repositories.team_id)
+    )
+  );
+
+create policy "Team members can create logs" on public.logs
+  for insert with check (is_team_member(team_id));
+
 create policy "Team members can view deployments" on public.deployments
   for select using (is_team_member(team_id));
 
-alter table public.logs enable row level security;
 create policy "Team members can view logs" on public.logs
   for select using (is_team_member(team_id));
 

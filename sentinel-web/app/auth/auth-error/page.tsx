@@ -1,12 +1,13 @@
 'use client';
 
+import { Suspense } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error') || 'Authentication failed';
   const errorDescription = searchParams.get('error_description') || 'An error occurred during authentication. Please try again.';
@@ -40,5 +41,13 @@ export default function AuthErrorPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={null}>
+      <AuthErrorContent />
+    </Suspense>
   );
 }

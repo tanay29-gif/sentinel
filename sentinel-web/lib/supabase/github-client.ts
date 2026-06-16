@@ -17,6 +17,29 @@ interface GitHubBranch {
   lastCommit?: string;
 }
 
+interface GitHubRepositoryResponse {
+  full_name: string;
+}
+
+interface GitHubCommitResponse {
+  sha: string;
+  html_url?: string;
+  commit: {
+    message: string;
+    author: {
+      name: string;
+      date: string;
+    };
+  };
+}
+
+interface GitHubBranchResponse {
+  name: string;
+  commit: {
+    sha: string;
+  };
+}
+
 export async function getGitHubClient() {
   const supabase = await createClient();
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -54,8 +77,8 @@ export async function fetchUserRepositories(): Promise<string[]> {
       return [];
     }
 
-    const repos = await response.json();
-    return repos.map((repo: any) => repo.full_name);
+    const repos = (await response.json()) as GitHubRepositoryResponse[];
+    return repos.map((repo) => repo.full_name);
   } catch (error) {
     console.error("Error fetching repositories:", error);
     return [];
@@ -87,9 +110,9 @@ export async function fetchRecentCommits(repos?: string[]): Promise<GitHubCommit
         continue;
       }
 
-      const commitData = await response.json();
+      const commitData = (await response.json()) as GitHubCommitResponse[];
       
-      const recentCommits = commitData.slice(0, 5).map((commit: any) => ({
+      const recentCommits = commitData.slice(0, 5).map((commit) => ({
         id: commit.sha.substring(0, 7),
         repo: repo,
         branch: "main", // Default branch, can be enhanced
@@ -135,8 +158,8 @@ export async function fetchBranches(repo: string): Promise<GitHubBranch[]> {
       return [];
     }
 
-    const branchData = await response.json();
-    return branchData.map((branch: any) => ({
+    const branchData = (await response.json()) as GitHubBranchResponse[];
+    return branchData.map((branch) => ({
       name: branch.name,
       repo: repo,
       lastCommit: branch.commit.sha.substring(0, 7),
