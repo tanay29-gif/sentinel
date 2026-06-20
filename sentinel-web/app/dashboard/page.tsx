@@ -42,7 +42,9 @@ type LogRow = {
   created_at: string;
 };
 
-export default async function DashboardPage() {
+type SearchParams = Promise<{ team_id?: string }>;
+
+export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,12 +54,17 @@ export default async function DashboardPage() {
     redirect("/auth");
   }
 
-  const { data: membership } = await supabase
+  const params = await searchParams;
+  let membershipQuery = supabase
     .from("memberships")
     .select("team_id, teams(name, github_installation_id)")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    .eq("user_id", user.id);
+
+  if (params.team_id) {
+    membershipQuery = membershipQuery.eq("team_id", params.team_id);
+  }
+
+  const { data: membership } = await membershipQuery.limit(1).maybeSingle();
 
   if (!membership?.team_id) {
     redirect("/");

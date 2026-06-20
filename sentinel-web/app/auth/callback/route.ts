@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/'
 
-  // console.log("NEXT =", next)
-  console.log("request.url =", request.url)
-  console.log("host =", request.headers.get("host"))
-  console.log("x-forwarded-host =", request.headers.get("x-forwarded-host"))
-  console.log("x-forwarded-proto =", request.headers.get("x-forwarded-proto"))
+  // // console.log("NEXT =", next)
+  // console.log("request.url =", request.url)
+  // console.log("host =", request.headers.get("host"))
+  // console.log("x-forwarded-host =", request.headers.get("x-forwarded-host"))
+  // console.log("x-forwarded-proto =", request.headers.get("x-forwarded-proto"))
 
   // Handle OAuth errors from GitHub/Supabase
   if (error) {
@@ -60,6 +60,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/auth/auth-error?${errorParams}`)
       }
       console.log("url", `${origin}${next}`)
+
+      if (!data.user?.user_metadata?.onboarding_completed) {
+        return NextResponse.redirect(`${origin}/sign-up`)
+      }
 
       return NextResponse.redirect(`${origin}${next}`)
 

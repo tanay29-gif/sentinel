@@ -3,15 +3,26 @@ import { Octokit } from "octokit";
 import { createAppAuth } from "@octokit/auth-app";
 
 export async function getInstallationClient(installationId: string) {
+     const appId = process.env.NEXT_PUBLIC_GITHUB_APP_ID;
+  const privateKey = process.env.NEXT_PUBLIC_GITHUB_PRIVATE_KEY;
+
+   if (!appId || !privateKey) {
+    throw new Error(
+      "Missing GITHUB_APP_ID or GITHUB_PRIVATE_KEY in environment variables."
+    );
+  }
+  const formattedKey = privateKey.replace(/\\n/g, '\n').trim();
+
   return new Octokit({
     authStrategy: createAppAuth,
     auth: {
-      appId: process.env.GITHUB_APP_ID!,
-      privateKey: process.env.GITHUB_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+      appId: appId,
+      privateKey: formattedKey,
       installationId: installationId,
     },
   });
 
+  
 }
 
 export async function fetchRepositories(installationId: string) {
