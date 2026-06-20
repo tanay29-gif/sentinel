@@ -29,12 +29,44 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/auth", baseUrl));
   }
 
+  const writeClient = getWriteClient(supabase);
+  const fullName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.user_metadata?.user_name ||
+    user.email?.split("@")[0] ||
+    "";
+
+  async function saveProfileInstallation(onboardingCompleted: boolean) {
+    return writeClient.from("profiles").upsert({
+      id: user!.id,
+      full_name: fullName,
+      github_installation_id: installationId,
+      onboarding_completed: onboardingCompleted,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
   if (teamId === "onboarding") {
-    await supabase.auth.updateUser({
+    const { error: userUpdateError } = await supabase.auth.updateUser({
       data: {
+        full_name: fullName,
+        github_installation_id: installationId,
         onboarding_completed: true,
       },
     });
+
+    if (userUpdateError) {
+      console.error("Failed to update onboarding metadata:", userUpdateError);
+      return NextResponse.redirect(new URL("/sign-up?error=profile-update-failed", baseUrl));
+    }
+
+    const { error: profileError } = await saveProfileInstallation(true);
+
+    if (profileError) {
+      console.error("Failed to save onboarding profile:", profileError);
+      return NextResponse.redirect(new URL("/sign-up?error=profile-update-failed", baseUrl));
+    }
 
     const redirectUrl = new URL("/", baseUrl);
     redirectUrl.searchParams.set("create", "1");
@@ -43,6 +75,13 @@ export async function GET(request: Request) {
   }
 
   if (!teamId || teamId === "create-team") {
+    const { error: profileError } = await saveProfileInstallation(Boolean(user.user_metadata?.onboarding_completed));
+
+    if (profileError) {
+      console.error("Failed to save create-team installation profile:", profileError);
+      return NextResponse.redirect(new URL("/?error=installation-save-failed", baseUrl));
+    }
+
     const redirectUrl = new URL("/", baseUrl);
     redirectUrl.searchParams.set("installation_id", installationId);
     redirectUrl.searchParams.set("setup", "complete");
@@ -60,8 +99,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/", baseUrl));
   }
 
-  const writeClient = getWriteClient(supabase);
-
   const { error: updateError } = await writeClient
     .from("teams")
     .update({ github_installation_id: installationId })
@@ -70,6 +107,12 @@ export async function GET(request: Request) {
   if (updateError) {
     console.error("Failed to save GitHub installation:", updateError);
     return NextResponse.redirect(new URL("/?error=installation-save-failed", baseUrl));
+  }
+
+  const { error: profileError } = await saveProfileInstallation(Boolean(user.user_metadata?.onboarding_completed));
+
+  if (profileError) {
+    console.error("Failed to save team installation profile:", profileError);
   }
 
   await syncInstallationData(writeClient, teamId, installationId);

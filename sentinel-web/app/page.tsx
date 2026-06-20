@@ -76,8 +76,14 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     redirect("/sign-up");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("github_installation_id")
+    .eq("id", user.id)
+    .single();
+
   const params = await searchParams;
-  const installationId = params.installation_id ?? "";
+ const installationId = params.installation_id || profile?.github_installation_id || "";
   const githubAppSlug = process.env.NEXT_PUBLIC_GITHUB_APP_SLUG ?? "sentinal-github";
   const installUrl = new URL(`https://github.com/apps/${githubAppSlug}/installations/new`);
   installUrl.searchParams.set("state", "create-team");

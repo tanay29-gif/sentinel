@@ -44,10 +44,23 @@ async function startSignUp(formData: FormData) {
     redirect("/sign-up?error=profile-update-failed");
   }
 
+  const { error: profileError } = await supabase.from("profiles").upsert({
+    id: user.id,
+    full_name: fullName,
+    onboarding_completed: false,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (profileError) {
+    console.error("Profile upsert failed before GitHub install:", profileError);
+    redirect("/sign-up?error=profile-update-failed");
+  }
+
   const githubAppSlug = process.env.NEXT_PUBLIC_GITHUB_APP_SLUG ?? "sentinal-github";
   const installUrl = new URL(`https://github.com/apps/${githubAppSlug}/installations/new`);
   installUrl.searchParams.set("state", "onboarding");
 
+  console.log("Redirecting to GitHub App installation at", installUrl.toString());
   redirect(installUrl.toString());
 }
 

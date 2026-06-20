@@ -7,13 +7,21 @@ create type public.member_role as enum ('owner', 'incident_commander', 'responde
 create type public.git_provider as enum ('github', 'gitlab');
 create type public.sla_status as enum ('Healthy', 'Warning', 'Breached');
 
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text not null default '',
+  github_installation_id text,
+  onboarding_completed boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- Teams table (extended)
 create table public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text unique not null, -- For Next.js routing (e.g., /dashboard/my-team)
   github_installation_id text, -- For GitHub App integration
-  slack_workspace_id text,
   created_at timestamptz not null default now()
 );
 
@@ -171,6 +179,7 @@ $$ language sql security definer;
 
 -- Apply to all major tables
 alter table public.incidents enable row level security;
+alter table public.profiles enable row level security;
 alter table public.memberships enable row level security;
 alter table public.repositories enable row level security;
 alter table public.branches enable row level security;
@@ -182,6 +191,15 @@ create index if not exists idx_memberships_user_id on public.memberships(user_id
 create index if not exists idx_memberships_team_id on public.memberships(team_id);
 create index if not exists idx_deployments_team_id on public.deployments(team_id);
 create index if not exists idx_logs_team_id on public.logs(team_id);
+
+create policy "Users can view their profile" on public.profiles
+  for select using (id = auth.uid());
+
+create policy "Users can create their profile" on public.profiles
+  for insert with check (id = auth.uid());
+
+create policy "Users can update their profile" on public.profiles
+  for update using (id = auth.uid());
 
 create policy "Users can view their memberships" on public.memberships
   for select using (user_id = auth.uid());
