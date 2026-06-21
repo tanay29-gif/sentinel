@@ -13,7 +13,12 @@ export async function createClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch (error) {
+            // Silently fail if cookies can't be set (e.g., during page rendering)
+            // Cookies can only be modified in Server Actions or Route Handlers
+          }
         },
       },
     }

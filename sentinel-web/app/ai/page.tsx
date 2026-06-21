@@ -7,6 +7,8 @@ import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 
 export default function AiPage() {
+
+  console.log("Rendering AI Page");
   return (
     <AppShell>
       <PageHeader eyebrow="Groq Llama 3" title="Conversational Incident Copilot" action="New chat" />

@@ -1,142 +1,223 @@
 import Link from "next/link";
-import { Activity, AlertTriangle, Clock3, GitBranch } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { redirect } from "next/navigation";
+import {  Building2, CheckCircle2, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppShell } from "@/components/sentinel/app-shell";
-import { MetricCard } from "@/components/sentinel/metric-card";
-import { PageHeader } from "@/components/sentinel/page-header";
-import { deployments, incidents, logs, services, tasks, timeline } from "@/lib/data";
+import { Input } from "@/components/ui/input";
+import { GitHubIcon } from "@/components/assests/github_icon";
+import { createClient } from "@/lib/supabase/server";
+import { TeamList } from "@/components/sentinel/list_team";
+import {createTeam} from "@/app/action";
+import { fetchInstalledRepositories } from "@/lib/github-sync";
 
-export default function Home() {
+type SearchParams = Promise<{
+  create?: string;
+  created?: string;
+  error?: string;
+  installation_id?: string;
+  setup?: string;
+  warning?: string;
+}>;
+
+type TeamRow = {
+  team_id: string;
+  role: string;
+  teams:
+  | {
+    id: string;
+    name: string;
+    slug: string;
+    github_installation_id: string | null;
+    created_at: string;
+  }
+  | {
+    id: string;
+    name: string;
+    slug: string;
+    github_installation_id: string | null;
+    created_at: string;
+  }[]
+  | null;
+};
+
+type TeamCard = {
+  id: string;
+  name: string;
+  slug: string;
+  github_installation_id: string | null;
+  created_at: string;
+  role: string;
+  team_id: string;
+};
+
+const errorCopy: Record<string, string> = {
+  "missing-team-fields": "Team name is required.",
+  "missing-installation": "Install the GitHub App before creating the team.",
+  "missing-repository": "Choose one repository for this team.",
+  "repository-not-installed": "That repository is not part of this GitHub installation.",
+  "repository-already-used": "That repository is already connected to another team.",
+  "slug-taken": "A team with that name already exists. Try a more specific name.",
+  "team-create-failed": "Could not create the team. Try again.",
+  "membership-create-failed": "Team was created, but owner membership failed.",
+  "installation-save-failed": "Could not save the GitHub installation. Try again.",
+};
+
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth");
+  }
+
+  if (!user.user_metadata?.onboarding_completed) {
+    redirect("/sign-up");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("github_installation_id")
+    .eq("id", user.id)
+    .single();
+
+  const params = await searchParams;
+ const installationId = params.installation_id || profile?.github_installation_id || "";
+  const githubAppSlug = process.env.NEXT_PUBLIC_GITHUB_APP_SLUG ?? "sentinal-github";
+  const installUrl = new URL(`https://github.com/apps/${githubAppSlug}/installations/new`);
+  installUrl.searchParams.set("state", "create-team");
+  const installedRepositories = installationId ? await fetchInstalledRepositories(installationId) : [];
+
+  const { data: memberships } = await supabase
+    .from("memberships")
+    .select("team_id, role, teams(id, name, slug, github_installation_id, created_at)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  const teams = ((memberships ?? []) as TeamRow[])
+    .map((membership) => {
+      const team = Array.isArray(membership.teams) ? membership.teams[0] : membership.teams;
+      return team ? { ...team, role: membership.role, team_id: membership.team_id } : null;
+    })
+    .filter((team): team is TeamCard => Boolean(team));
+
+  const message = params.error ? errorCopy[params.error] : null;
+  const suggestedName =
+    installedRepositories[0]?.name ||
+    user.user_metadata?.full_name ||
+    user.user_metadata?.user_name ||
+    user.email?.split("@")[0] ||
+    "My Team";
+
   return (
-    <AppShell>
-      <PageHeader eyebrow="Live command center" title="AI-native incident operations" action="Create incident" />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Active incidents" value="3" detail="1 SEV-1 needs commander review" icon={AlertTriangle} tone="red" />
-        <MetricCard title="Services healthy" value="3 / 5" detail="checkout-api and billing at risk" icon={Activity} tone="amber" />
-        <MetricCard title="Deploy stability" value="91%" detail="Down 4% after checkout deploy" icon={GitBranch} tone="slate" />
-        <MetricCard title="SLA risk" value="31m" detail="Time left on INC-1042 response" icon={Clock3} tone="emerald" />
-      </section>
-
-      <section className="mt-6 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Incident Triage</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {incidents.map((incident) => (
-              <Link
-                key={incident.id}
-                href={`/incidents/${incident.id === "INC-1042" ? "INC-1042" : ""}`}
-                className="block rounded-md border border-slate-200 p-4 hover:bg-slate-50"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={incident.severity === "SEV-1" ? "destructive" : "secondary"}>{incident.severity}</Badge>
-                  <Badge variant="outline">{incident.status}</Badge>
-                  <span className="text-xs text-slate-500">{incident.started}</span>
-                </div>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium">{incident.title}</p>
-                    <p className="text-sm text-slate-500">{incident.summary}</p>
-                  </div>
-                  <Button variant="outline" size="sm">Open</Button>
-                </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>AI Root-Cause Brief</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-sm font-medium text-emerald-900">Most likely cause</p>
-              <p className="mt-2 text-sm text-emerald-800">{incidents[0].rootCause}</p>
+    <main className="min-h-screen bg-[#f7f8fa] px-4 py-8 text-slate-950">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <header className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="mb-4 flex size-11 items-center justify-center rounded-md bg-emerald-600 text-white">
+              <ShieldCheck className="size-5" />
             </div>
-            <div className="space-y-2 text-sm">
-              <p className="font-medium">Suggested next actions</p>
-              {tasks.slice(0, 3).map((task) => (
-                <div key={task.title} className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2">
-                  <span>{task.title}</span>
-                  <Badge variant="outline">{task.assignee}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+            <h1 className="text-3xl font-semibold tracking-normal">Sentinel teams</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Choose a team to open its dashboard, or create a new team after installing the GitHub App for repository
+              access.
+            </p>
+          </div>
 
-      <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Card className="rounded-md lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Event Timeline</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {timeline.map((item) => (
-                <div key={`${item.time}-${item.source}`} className="grid grid-cols-[64px_96px_1fr] gap-3 text-sm">
-                  <span className="font-mono text-slate-500">{item.time}</span>
-                  <Badge variant="outline">{item.source}</Badge>
-                  <span>{item.event}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Live Signals</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {logs.slice(0, 4).map((log) => (
-              <div key={`${log.time}-${log.trace}`} className="rounded-md bg-slate-50 p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <Badge variant={log.level === "ERROR" ? "destructive" : "secondary"}>{log.level}</Badge>
-                  <span className="font-mono text-xs text-slate-500">{log.time}</span>
-                </div>
-                <p className="mt-2">{log.message}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <Link href="/?create=1">
+              <Plus className="size-4" />
+              Create team
+            </Link>
+          </Button>
+        </header>
 
-      <section className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Service Health</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {services.map((service) => (
-              <div key={service.name} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <span className="font-medium">{service.name}</span>
-                <span className="text-slate-500">{service.uptime}</span>
-                <Badge variant={service.health === "Healthy" ? "secondary" : "destructive"}>{service.health}</Badge>
+        {params.create || installationId || message ? (
+          <Card className="rounded-md">
+            <CardHeader>
+              <CardTitle>New team</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form action={createTeam} className="space-y-4">
+                <input type="hidden" name="installation_id" value={installationId} />
+
+                <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                  <label className="block space-y-2 text-sm font-medium text-slate-700">
+                    <span>Team name</span>
+                    <Input name="name" required defaultValue={suggestedName} placeholder="Acme Platform" />
+                  </label>
+
+                  <Button asChild variant={installationId ? "outline" : "default"} size="lg" className="w-full lg:w-auto">
+                    <a href={installUrl.toString()}>
+                      <span className="[&_svg]:size-4">
+                        <GitHubIcon />
+                      </span>
+                      {installationId ? "GitHub installed" : "Install GitHub App"}
+                    </a>
+                  </Button>
+                </div>
+
+                {installationId ? (
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-medium text-slate-700">Repository for this team</legend>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {installedRepositories.map((repository, index) => (
+                        <label
+                          key={repository.full_name}
+                          className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm transition-all has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50"
+                        >
+                          <input
+                            className="mt-1"
+                            type="radio"
+                            name="repo_full_name"
+                            value={repository.full_name}
+                            required
+                            defaultChecked={index === 0}
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-slate-900">{repository.full_name}</span>
+                            <span className="block truncate text-xs text-slate-500">
+                              Default branch: {repository.default_branch ?? "main"}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    {!installedRepositories.length ? (
+                      <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                        No repositories were returned by this installation. Reinstall the GitHub App and choose a repo.
+                      </p>
+                    ) : null}
+                  </fieldset>
+                ) : null}
+
+                <Button className="w-full lg:w-auto" size="lg" type="submit" disabled={!installationId || !installedRepositories.length}>
+                  <Building2 className="size-4" />
+                  Create team
+                </Button>
+              </form>
+
+              <div className="mt-4 space-y-2">
+                {installationId ? (
+                  <p className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    <CheckCircle2 className="size-4" />
+                    GitHub installation complete. Create the team to finish setup.
+                  </p>
+                ) : null}
+                {message ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p> : null}
+                {params.warning === "sync-failed" ? (
+                  <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                    Team created, but the first repository sync did not finish. Open the dashboard and retry later.
+                  </p>
+                ) : null}
               </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Deployment Watch</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {deployments.map((deployment) => (
-              <div key={deployment.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <span>
-                  <span className="font-medium">{deployment.repo}</span>
-                  <span className="ml-2 font-mono text-xs text-slate-500">{deployment.commit}</span>
-                </span>
-                <Badge variant={deployment.status === "Suspect" ? "destructive" : "outline"}>{deployment.status}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : null}
+
+         <TeamList teams={teams} createdId={params.created} />
       </section>
-    </AppShell>
+    </main>
   );
 }
