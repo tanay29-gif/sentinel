@@ -42,9 +42,9 @@ type LogRow = {
   created_at: string;
 };
 
-type SearchParams = Promise<{ team_id?: string }>;
+type Params = Promise<{ teamId: string }>;
 
-export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function DashboardPage({ params }: { params: Params }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,14 +54,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     redirect("/auth");
   }
 
-  const params = await searchParams;
+  const { teamId } = await params;
+  
+
   let membershipQuery = supabase
     .from("memberships")
     .select("team_id, teams(name, github_installation_id)")
     .eq("user_id", user.id);
 
-  if (params.team_id) {
-    membershipQuery = membershipQuery.eq("team_id", params.team_id);
+  if (teamId) {
+    membershipQuery = membershipQuery.eq("team_id", teamId);
   }
 
   const { data: membership } = await membershipQuery.limit(1).maybeSingle();
@@ -103,7 +105,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
   const repoById = new Map(repoRows.map((repo) => [repo.id, repo]));
 
   return (
-    <AppShell>
+    <AppShell params={params}>
       <PageHeader eyebrow={team.name} title="Sentinel dashboard" action="Create incident" />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

@@ -5,29 +5,36 @@ import {
   Clock3,
   GitBranch,
   GitCommit,
-  RadioTower,
+  LucideIcon,
   ShieldCheck,
   Siren,
 } from "lucide-react";
 
 export const currentUser = {
-  name: "Tanay Sharma",
+  name: "Tanay Kamdi",
   email: "tanay@sentinel.dev",
   role: "Incident Commander",
   team: "Platform Reliability",
 };
 
-export const navItems = [
-  { href: "/", label: "Command", icon: RadioTower },
-  { href: "/incidents", label: "Incidents", icon: Siren },
-  { href: "/logs", label: "Logs", icon: AlertTriangle },
-  { href: "/deployments", label: "Deployments", icon: GitBranch },
-  { href: "/commits", label: "Commits", icon: GitCommit },
-  { href: "/services", label: "Services", icon: ShieldCheck },
-  { href: "/tasks", label: "Tasks", icon: CheckCircle2 },
-  { href: "/analytics", label: "Analytics", icon: Clock3 },
-  { href: "/ai", label: "AI Copilot", icon: Bot },
+export interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export const getNavItems = (teamId: string): NavItem[] => [
+
+{ href: `/${teamId}/incidents`, label: "Incidents", icon: Siren },
+{ href: `/${teamId}/logs`, label: "Logs", icon: AlertTriangle },
+{ href: `/${teamId}/deployments`, label: "Deployments", icon: GitBranch },
+{ href: `/${teamId}/commits`, label: "Commits", icon: GitCommit },
+{ href: `/${teamId}/services`, label: "Services", icon: ShieldCheck },
+{ href: `/${teamId}/tasks`, label: "Tasks", icon: CheckCircle2 },
+{ href: `/${teamId}/analytics`, label: "Analytics", icon: Clock3 },
+{ href: `/${teamId}/ai`, label: "AI Copilot", icon: Bot },
 ];
+
 
 export const incidents = [
   {

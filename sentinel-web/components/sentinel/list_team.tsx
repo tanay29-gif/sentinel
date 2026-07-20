@@ -25,7 +25,7 @@ export function TeamList({ teams, createdId }: { teams: TeamCard[]; createdId?: 
       {teams.map((team) => (
         <Link
           key={team.id}
-          href={`/dashboard?team_id=${team.id}`}
+          href={`/${team.id}/dashboard`}
           className="group relative rounded-md border border-slate-200 bg-white p-5 text-sm shadow-xs transition-all hover:border-emerald-300 hover:shadow-sm"
         >
           <div className="flex items-start justify-between gap-3">

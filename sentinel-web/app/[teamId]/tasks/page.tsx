@@ -4,9 +4,11 @@ import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 import { tasks } from "@/lib/data";
 
-export default function TasksPage() {
+export default async function TasksPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
+
   return (
-    <AppShell>
+    <AppShell params={params}>
       <PageHeader eyebrow="SLA workflow" title="Assignments & Escalations" action="Assign task" />
       <div className="grid gap-4 md:grid-cols-3">
         {["Open", "In progress", "Queued"].map((column) => (

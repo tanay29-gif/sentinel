@@ -6,11 +6,11 @@ import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 import { incidents, logs, tasks, timeline } from "@/lib/data";
 
-export default function IncidentDetailPage() {
+export default async function IncidentDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
   const incident = incidents[0];
 
   return (
-    <AppShell>
+    <AppShell params={params}>
       <PageHeader eyebrow={`${incident.id} / ${incident.service}`} title={incident.title} action="Escalate" />
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="rounded-md">

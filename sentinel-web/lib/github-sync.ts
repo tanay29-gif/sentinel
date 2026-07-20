@@ -1,6 +1,14 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getInstallationClient } from "@/lib/github-app";
 
+// queued  data of hte deployment
+// pending
+// in_progress
+// success
+// failure
+// error
+// inactive
+
 type GitHubRepository = {
   name: string;
   full_name: string;
@@ -30,13 +38,22 @@ type GitHubCommit = {
   } | null;
 };
 
+type GithubDeployment = {
+  id: number;
+  sha: string;
+  ref: string;
+  environment: string;
+  statuses_url: string;
+}
 type WorkflowRun = {
   id: number;
   name: string | null;
   display_title: string;
+  head_sha: string;
   status: string | null;
   conclusion: string | null;
   html_url: string;
+  event: string;
   created_at: string;
 };
 
@@ -46,6 +63,7 @@ export type InstalledRepository = {
   html_url: string | null;
   default_branch: string | null;
 };
+
 
 export function getWriteClient(userClient: SupabaseClient) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -103,7 +121,7 @@ export async function syncInstallationData(
         },
         { onConflict: "full_name" }
       )
-      .select("id, default_branch")
+      .select("id, default_branch, name")
       .single();
 
     if (repoError || !repoRow) {
@@ -160,44 +178,102 @@ export async function syncInstallationData(
         { onConflict: "sha" }
       );
     }
+    const { data: deploymentsData } = await octokit.request('GET /repos/{owner}/{repo}/deployments', {
+      owner,
+      repo,
+      per_page: 5,
+    })
+    const deployments = deploymentsData as GithubDeployment[];
 
-    try {
-      const { data: runsData } = await octokit.request("GET /repos/{owner}/{repo}/actions/runs", {
-        owner,
-        repo,
-        per_page: 5,
+    for (const deployment of deployments) {
+      const { data: statuses } = await octokit.request('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
+        owner, repo, deployment_id: deployment.id
       });
-      const runs = runsData.workflow_runs as WorkflowRun[];
 
-      for (const run of runs) {
-        const level = run.conclusion === "failure" || run.conclusion === "cancelled" ? "ERROR" : "INFO";
-        const runId = String(run.id);
-        const { data: existingLog } = await supabase
-          .from("logs")
-          .select("id")
-          .eq("team_id", teamId)
-          .eq("run_id", runId)
-          .maybeSingle();
+      const latestStatus = statuses[0];
 
-        if (!existingLog) {
-          await supabase.from("logs").insert({
-            team_id: teamId,
-            run_id: runId,
-            job_name: run.name ?? "GitHub Actions",
-            level,
-            message: `${repository.full_name}: ${run.display_title} is ${run.conclusion ?? run.status ?? "queued"}`,
-            metadata: {
-              repo: repository.full_name,
-              status: run.status,
-              conclusion: run.conclusion,
-              url: run.html_url,
-            },
-            created_at: run.created_at,
+      await supabase.from('deployments').upsert({
+        team_id: teamId,
+        provider: 'github',
+        repo: repoRow.name,
+        commit_sha: deployment.sha,
+        environment: deployment.environment,
+        status: latestStatus.state,
+        description: latestStatus.description,
+        environment_url: latestStatus.environment_url,
+        log_url: latestStatus.log_url,
+        repository_id: repoRow.id
+      });
+    }
+
+try {
+  const { data: runsData } = await octokit.request("GET /repos/{owner}/{repo}/actions/runs", {
+    owner,
+    repo,
+    per_page: 5,
+  });
+
+  const runs = runsData.workflow_runs as WorkflowRun[];
+
+  for (const run of runs) {
+    const runId = String(run.id);
+    const isFailure = run.conclusion === "failure";
+    const level = isFailure || run.conclusion === "cancelled" ? "ERROR" : "INFO";
+
+    const { data: existingLog } = await supabase
+      .from("logs")
+      .select("id")
+      .eq("team_id", teamId)
+      .eq("run_id", runId)
+      .maybeSingle();
+
+    if (!existingLog) {
+      // Use an array to store all failed jobs/steps
+      let failureSummary: { job: string; failed_steps: string[] }[] = [];
+
+      if (isFailure) {
+        try {
+          const { data: jobsData } = await octokit.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", {
+            owner,
+            repo,
+            run_id: run.id,
           });
+
+          // Filter for all failed jobs
+          failureSummary = jobsData.jobs
+            .filter((job) => job.conclusion === "failure")
+            .map((job) => ({
+              job: job.name,
+              // Within each failed job, get names of all steps that failed
+              failed_steps: job.steps
+                ?.filter((step) => step.conclusion === "failure")
+                .map((step) => step.name) || [],
+            }));
+        } catch (jobError) {
+          console.warn("Could not fetch job details for run:", run.id);
         }
       }
-    } catch (error) {
-      console.warn("Workflow run sync skipped:", repository.full_name, error);
+
+      await supabase.from("logs").insert({
+        team_id: teamId,
+        run_id: runId,
+        level,
+        message: `${repository.full_name}: ${run.display_title} is ${run.conclusion ?? run.status ?? "queued"}`,
+        metadata: {
+          repo: repository.full_name,
+          status: run.status,
+          conclusion: run.conclusion,
+          url: run.html_url,
+          sha: run.head_sha,
+          // Store the array of failed jobs and steps
+          failures: failureSummary.length > 0 ? failureSummary : null,
+        },
+        created_at: run.created_at,
+      });
     }
   }
+} catch (error) {
+  console.warn("Workflow run sync skipped:", repository.full_name, error);
+}
+}
 }

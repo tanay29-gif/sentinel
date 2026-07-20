@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 
-export default function AiPage() {
+export default async function AiPage({ params }: { params: Promise<{ teamId: string }> }) {
 
   console.log("Rendering AI Page");
   return (
-    <AppShell>
+    <AppShell params= {params}>
       <PageHeader eyebrow="Groq Llama 3" title="Conversational Incident Copilot" action="New chat" />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="rounded-md">

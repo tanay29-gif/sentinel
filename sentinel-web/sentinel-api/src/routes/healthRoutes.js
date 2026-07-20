@@ -5,7 +5,7 @@ function createHealthRoutes(dependencies) {
   const router = express.Router();
   const healthController = createHealthController(dependencies);
 
-  router.get("/health", healthController.getHealth);
+  router.get("/", healthController.getHealth);
 
   return router;
 }

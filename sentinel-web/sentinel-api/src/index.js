@@ -1,4 +1,15 @@
-require("dotenv").config();
+const path = require('path');
+const envPath = path.resolve(__dirname, '../../.env');
+const result = require('dotenv').config({ path: envPath });
+
+
+if (result.error) {
+  console.error("Error loading .env file:", result.error);
+} else {
+  console.log(".env loaded successfully");
+}
+
+
 
 const cors = require("cors");
 const express = require("express");
@@ -13,6 +24,11 @@ const { createCommitsRoutes } = require("./routes/commitsRoutes");
 const app = express();
 const port = process.env.PORT || 4000;
 
+// console.log("process.env.SUPABASE_URL", process.env.SUPABASE_URL);
+// console.log("process.env.NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+// console.log("process.env.GROQ_API_KEY", process.env.GROQ_API_KEY);
+
+
 const supabase =
   (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
   (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY)
@@ -22,7 +38,7 @@ const supabase =
       )
     : null;
 
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const groq = (process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY) ? new Groq({ apiKey: process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY }) : null;
 
 app.use(cors());
 app.use(express.text({ type: ["text/plain", "text/*"], limit: "1mb" }));
@@ -30,7 +46,7 @@ app.use(express.json());
 
 const dependencies = { groq, supabase };
 
-app.use(createHealthRoutes(dependencies));
+app.use("/api/health",createHealthRoutes(dependencies));
 app.use("/api/incidents", createIncidentsRoutes(dependencies));
 app.use("/api/commits", createCommitsRoutes(dependencies));
 app.use("/api/ai", createAiRoutes(dependencies));

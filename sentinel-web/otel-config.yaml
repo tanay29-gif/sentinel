@@ -9,10 +9,14 @@ receivers:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-    send_timestamps: true
+    send_timestamps: false 
+    resource_to_telemetry_conversion:
+      enabled: true
+  debug:
+    verbosity: detailed 
 
 service:
   pipelines:
     metrics:
       receivers: [otlp]
-      exporters: [prometheus]
+      exporters: [prometheus, debug]

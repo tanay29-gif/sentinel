@@ -4,9 +4,19 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { currentUser, navItems } from "@/lib/data";
+import { currentUser, getNavItems, NavItem } from "@/lib/data";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+  params: Promise<{ teamId: string }>; // Define the prop here
+}
+
+export async function AppShell({ children ,  params }: AppShellProps) {
+  const resolvedParams = await params;
+  const teamId = resolvedParams.teamId; 
+  
+  const navItems: NavItem[] = getNavItems(teamId);
+
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-950">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">

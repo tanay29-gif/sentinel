@@ -6,9 +6,9 @@ import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 import { incidents } from "@/lib/data";
 
-export default function IncidentsPage() {
+export default async function IncidentsPage({ params }: { params: Promise<{ teamId: string }> }) {
   return (
-    <AppShell>
+    <AppShell params={params}>
       <PageHeader eyebrow="Triage queue" title="Incidents" action="New incident" />
       <Card className="rounded-md">
         <CardHeader>

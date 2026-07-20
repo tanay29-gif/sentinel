@@ -5,9 +5,9 @@ import { MetricCard } from "@/components/sentinel/metric-card";
 import { PageHeader } from "@/components/sentinel/page-header";
 import { analytics } from "@/lib/data";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({ params }: { params: Promise<{ teamId: string }> }) {
   return (
-    <AppShell>
+    <AppShell params={params}>
       <PageHeader eyebrow="Reliability trends" title="Deployment Stability & Incident Analytics" action="Export report" />
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard title="Incidents this week" value="16" detail="22% lower than last week" icon={AlertTriangle} tone="amber" />
