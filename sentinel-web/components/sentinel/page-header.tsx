@@ -1,12 +1,9 @@
 // components/sentinel/page-header.tsx
 import React from 'react';
 import { Button } from "@/components/ui/button";
+import type { PageHeaderProps } from "@/lib/interface";
 
-interface PageHeaderProps {
-  title: string;
-  eyebrow: string;
-  action?: React.ReactNode; // Ensure this is ReactNode
-}
+
 
 export function PageHeader({ title, eyebrow, action }: PageHeaderProps) {
   return (

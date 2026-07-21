@@ -6,17 +6,18 @@ import { GitCommit, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Commit } from "@/lib/interface";
 
-interface Commit {
-  id: string;
-  repo: string;
-  branch: string;
-  commit: string;
-  message: string;
-  author: string;
-  time: string;
-  url?: string;
-}
+// interface Commit {
+//   id: string;
+//   repo: string;
+//   branch: string;
+//   commit: string;
+//   message: string;
+//   author: string;
+//   time: string;
+//   url?: string;
+// }
 
 export function CommitsFeed() {
   const [commits, setCommits] = useState<Commit[]>([]);

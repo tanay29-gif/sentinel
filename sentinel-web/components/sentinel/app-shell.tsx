@@ -5,11 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { currentUser, getNavItems, NavItem } from "@/lib/data";
+import type { AppShellProps } from "@/lib/interface";
 
-interface AppShellProps {
-  children: React.ReactNode;
-  params: Promise<{ teamId: string }>; // Define the prop here
-}
+
 
 export async function AppShell({ children ,  params }: AppShellProps) {
   const resolvedParams = await params;

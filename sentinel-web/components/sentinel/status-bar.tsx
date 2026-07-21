@@ -1,10 +1,7 @@
 // components/status-bar.tsx
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { DailyHistory } from "@/lib/interface";
 
-interface DailyHistory {
-  timestamp: number;
-  status: "operational" | "warning" | "critical";
-}
 
 export function StatusBar({ history }: { history: DailyHistory[] }) {
   // Ensure we have exactly 14 slots, filling empty ones if data is missing

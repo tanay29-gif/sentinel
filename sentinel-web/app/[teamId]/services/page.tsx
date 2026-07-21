@@ -10,15 +10,7 @@ import { ServiceCard } from "@/components/sentinel/service-box";
 import { fetchServiceMetrics } from "@/lib/supabase/grafana-data";
 import { createClient } from "@/lib/supabase/server";
 import ServiceList from "./ServiceList";
-
-interface Service {
-  id: string;
-  team_id: string;
-  name: string;
-  health: string;
-  uptime: number;
-  created_at: string;
-}
+import type {Service} from "@/lib/interface";
 
 
 export default async function ServicesPage({ params }: { params: Promise<{ teamId: string }> }) {

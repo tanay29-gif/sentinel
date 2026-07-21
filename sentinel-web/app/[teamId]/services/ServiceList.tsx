@@ -2,16 +2,8 @@
 import { useEffect, useState } from "react";
 import { ServiceCard } from "@/components/sentinel/service-box";
 import { fetchServiceMetrics, type ServiceMetrics } from "@/lib/supabase/grafana-data";
+import type { Service , ServiceListProps } from "@/lib/interface";
 
-interface Service {
-    id: string;
-    name: string;
-}
-
-interface ServiceListProps {
-    ServicesNames: Service[];
-    allMetrics: Record<string, ServiceMetrics>; // Initial 14-day data from Server
-}
 
 export default function ServiceListClient({ ServicesNames, allMetrics }: ServiceListProps) {
     // This state holds the 14-day history AND the live status

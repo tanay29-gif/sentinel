@@ -1,44 +1,8 @@
 import { createClient } from "./server";
+// import type { SupabaseClient } from "@supabase/supabase-js";
+import type { GitHubCommit, GitHubBranch, GitHubRepositoryResponse, GitHubCommitResponse, GitHubBranchResponse } from "@/lib/interface";
 
-interface GitHubCommit {
-  id: string;
-  repo: string;
-  branch: string;
-  commit: string;
-  message: string;
-  author: string;
-  time: string;
-  url?: string;
-}
 
-interface GitHubBranch {
-  name: string;
-  repo: string;
-  lastCommit?: string;
-}
-
-interface GitHubRepositoryResponse {
-  full_name: string;
-}
-
-interface GitHubCommitResponse {
-  sha: string;
-  html_url?: string;
-  commit: {
-    message: string;
-    author: {
-      name: string;
-      date: string;
-    };
-  };
-}
-
-interface GitHubBranchResponse {
-  name: string;
-  commit: {
-    sha: string;
-  };
-}
 
 export async function getGitHubClient() {
   const supabase = await createClient();
