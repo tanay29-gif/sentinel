@@ -91,3 +91,7 @@ export interface ServiceMetrics {
   lastErrorRate: string;
   currentStatus: string;
 }
+
+export interface refreshWorkflowLogs {
+  
+}
