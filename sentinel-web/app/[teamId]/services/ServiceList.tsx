@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react";
 import { ServiceCard } from "@/components/sentinel/service-box";
-import { fetchServiceMetrics, type ServiceMetrics } from "@/lib/supabase/grafana-data";
+import { fetchServiceMetrics, type ServiceMetrics } from "@/lib/grafana/grafana-data";
 import type { Service , ServiceListProps } from "@/lib/interface";
 
 

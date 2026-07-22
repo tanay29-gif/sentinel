@@ -1,43 +1,103 @@
 Developer
     │
-    │ git push feature/login
+    │ git push feature/auth
     ▼
-Feature Branch
+GitHub
     │
     ▼
-Open Pull Request
+CI Workflow Starts
+    │
+    ├── Workflow Run Created
+    │
+    ├── Build Job
+    │
+    ├── Test Job
+    │
+    └── Lint Job
     │
     ▼
-GitHub Actions (CI)
-    │
-    ├── Checkout Code
-    ├── Install Dependencies
-    ├── Run Linter
-    ├── Run Unit Tests
-    ├── Run Build
-    └── CI Passes ✅
+Workflow Completed
     │
     ▼
-Reviewer Approves
+Pull Request Approved
     │
     ▼
 Merge into main
     │
     ▼
-GitHub Actions (CD)
+CD Workflow Starts
     │
-    ├── Checkout main
-    ├── Build Production
-    ├── Build Docker Image
-    ├── Push Docker Image
-    ├── Deploy to Server/Kubernetes/Vercel
+    ├── Workflow Run Created
+    │
+    ├── Build Docker
+    │
+    ├── Push Docker
+    │
+    ├── Deploy
+    │
     └── Health Check
+    │
+    ▼
+Deployment Record Created
     │
     ▼
 Application Running
     │
     ▼
-Grafana / Prometheus / Loki
+OpenTelemetry
+    │
+    ├── Metrics
+    ├── Logs
+    └── Traces
     │
     ▼
-Logs • Metrics • Alerts
+Grafana Stack
+    │
+    ├── Loki (Logs)
+    ├── Prometheus (Metrics)
+    └── Tempo (Traces)
+    │
+    ▼
+Monitoring Dashboard
+    │
+    ├── Workflow Runs
+    ├── Deployments
+    ├── Runtime Logs
+    ├── Metrics
+    └── Alerts
+
+
+    webhook flow
+    GitHub
+
+        │
+
+        ▼
+
+POST /api/github/webhook
+
+        │
+
+Read Header
+
+x-github-event
+
+        │
+
+Switch(event)
+
+        │
+
+ ┌──────────────┬──────────────┬──────────────┐
+ │              │              │              │
+ ▼              ▼              ▼              ▼
+push      pull_request   workflow_run   workflow_job
+ │              │              │              │
+ ▼              ▼              ▼              ▼
+update repo  update PR  workflow_runs  workflow_jobs
+                                     │
+                                     ▼
+                               workflow_steps
+                                     │
+                                     ▼
+                                 create logs

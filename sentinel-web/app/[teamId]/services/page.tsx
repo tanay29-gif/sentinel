@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/sentinel/page-header";
 import { services } from "@/lib/data";
 import AddServiceSidebar from "@/components/sentinel/service-sidebar";
 import { ServiceCard } from "@/components/sentinel/service-box";
-import { fetchServiceMetrics } from "@/lib/supabase/grafana-data";
+import { fetchServiceMetrics } from "@/lib/grafana/grafana-data";
 import { createClient } from "@/lib/supabase/server";
 import ServiceList from "./ServiceList";
 import type {Service} from "@/lib/interface";

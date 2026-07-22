@@ -8,7 +8,7 @@ import { GitHubIcon } from "@/components/assests/github_icon";
 import { createClient } from "@/lib/supabase/server";
 import { TeamList } from "@/components/sentinel/list_team";
 import {createTeam} from "@/app/action";
-import { fetchInstalledRepositories } from "@/lib/github-sync";
+import { fetchInstalledRepositories } from "@/lib/github/github-sync";
 
 type SearchParams = Promise<{
   create?: string;

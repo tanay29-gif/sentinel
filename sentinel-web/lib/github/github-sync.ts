@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getInstallationClient } from "@/lib/github-app";
+import { getInstallationClient } from "@/lib/github/github-app";
+import { GitHubRepository, GitHubBranch, GitHubCommit, GithubDeployment, WorkflowRun, InstalledRepository} from "@/lib/interface";
 
 // queued  data of hte deployment
 // pending
@@ -8,61 +9,6 @@ import { getInstallationClient } from "@/lib/github-app";
 // failure
 // error
 // inactive
-
-type GitHubRepository = {
-  name: string;
-  full_name: string;
-  html_url: string | null;
-  default_branch: string | null;
-  owner: { login: string };
-};
-
-type GitHubBranch = {
-  name: string;
-  commit: { sha: string };
-};
-
-type GitHubCommit = {
-  sha: string;
-  html_url: string;
-  commit: {
-    message: string;
-    author: {
-      name: string | null;
-      date: string | null;
-    } | null;
-  };
-  author: {
-    login: string;
-    avatar_url: string;
-  } | null;
-};
-
-type GithubDeployment = {
-  id: number;
-  sha: string;
-  ref: string;
-  environment: string;
-  statuses_url: string;
-}
-type WorkflowRun = {
-  id: number;
-  name: string | null;
-  display_title: string;
-  head_sha: string;
-  status: string | null;
-  conclusion: string | null;
-  html_url: string;
-  event: string;
-  created_at: string;
-};
-
-export type InstalledRepository = {
-  name: string;
-  full_name: string;
-  html_url: string | null;
-  default_branch: string | null;
-};
 
 
 export function getWriteClient(userClient: SupabaseClient) {
@@ -112,6 +58,7 @@ export async function syncInstallationData(
       .upsert(
         {
           team_id: teamId,
+          repository_github_id: repository.id,
           name: repository.name,
           full_name: repository.full_name,
           provider: "github",

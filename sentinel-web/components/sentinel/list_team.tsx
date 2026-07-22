@@ -43,7 +43,7 @@ export function TeamList({ teams, createdId }: { teams: TeamCard[]; createdId?: 
               <ArrowRight className="size-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-700" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                  <button className="flex size-8 items-center justify-center rounded-md hover:bg-slate-100">
+                  <button suppressHydrationWarning className="flex size-8 items-center justify-center rounded-md hover:bg-slate-100">
                     <MoreVertical className="size-4 text-slate-500" />
                   </button>
                 </DropdownMenuTrigger>

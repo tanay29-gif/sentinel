@@ -1,6 +1,7 @@
 // lib/github-app.ts
 import { Octokit } from "octokit";
 import { createAppAuth } from "@octokit/auth-app";
+import type {WorkflowRun} from "@/lib/interface";
 
 export async function getInstallationClient(installationId: string) {
      const appId = process.env.NEXT_PUBLIC_GITHUB_APP_ID;

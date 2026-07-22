@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getWriteClient, syncInstallationData } from "@/lib/github-sync";
+import { getWriteClient, syncInstallationData } from "@/lib/github/github-sync";
 
 export async function GET(request: Request) {
 
