@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/service";
 import { HandleWorkflowJobPayload } from "@/lib/interface";
+import { NextResponse } from "next/server";
+
 
 
 
@@ -13,7 +15,9 @@ const { workflow_job, repository } = payload;
     .eq("full_name", repository.full_name)
     .single();
 
-  if (!repoRecord) return; // Can't do anything without a repo record
+  if (!repoRecord) {
+    return NextResponse.json({ success: false, error: "Repository not found"}); 
+  }
 
 
   const { data: runRecord, error: runError } = await supabaseAdmin
@@ -29,15 +33,15 @@ const { workflow_job, repository } = payload;
     .single();
 
   if (runError || !runRecord) {
-    console.error("Could not find or create parent run:", runError);
-    return;
+    console.error("Workflow Run Table Error:", runError);
+    return NextResponse.json({ success: false, error: runError.message });
   }
 
   // 3. Now it is 100% SAFE to insert the Event
   const eventType = determineEventType(payload);
   const details = getWorkflowEventMessage(eventType, workflow_job.name);
 
-  await supabaseAdmin.from("workflow_events").insert({
+  const {data: eventsData, error: eventsError} =await supabaseAdmin.from("workflow_events").insert({
     workflow_run_id: runRecord.id, // This UUID is now guaranteed to exist
     workflow_job_id: workflow_job.id,
     repository_id: repoRecord.id,
@@ -46,7 +50,19 @@ const { workflow_job, repository } = payload;
     level: details.level,
     title: details.title,
     description: details.description,
-  });
+  })
+  .select("id")
+  .single();
+
+  if(eventsError || !eventsData){
+    console.error("Workflow Events Table Error:", eventsError);
+    return NextResponse.json({ success: false, error: eventsError.message })
+  }
+
+  console.log("workflow_events table created", eventsData?.id );
+ 
+  console.log("workflow_job worked");
+  return NextResponse.json({ success: true, error: "Workflow_job worked perfect" })
 }
 
 function determineEventType(payload: HandleWorkflowJobPayload): string {

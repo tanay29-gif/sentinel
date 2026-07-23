@@ -11,11 +11,11 @@ export default async function handleDeployment(payload: any) {
     .eq("full_name", repository.full_name)
     .single();
 
-  if (!repositoryRecord) return NextResponse.json({ error: "Repo not found" });
+  if (!repositoryRecord){
+    console.error("Repo not found:", repository.full_name);
+     return NextResponse.json({ error: "Repo not found" });
+  }
 
-  // 2. Map the URLs correctly from the deployment_status object
-  const deployUrl = deployment_status.environment_url;
-  const logUrl = deployment_status.log_url || deployment_status.target_url;
 
   // 3. Upsert into Supabase
   const { error } = await supabaseAdmin

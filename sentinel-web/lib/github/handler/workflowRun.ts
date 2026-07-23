@@ -14,7 +14,7 @@ export default async function handleWorkflowRun(payload: handleWorkflowRunPayloa
   const { data: repositoryRecord, error: repositoryError } =
     await supabaseAdmin
       .from("repositories")
-      .select("id, team_id, service_id")
+      .select("id, team_id")
       .eq("full_name", repository.full_name)
       .eq("provider", "github")
       .single();
@@ -23,6 +23,8 @@ export default async function handleWorkflowRun(payload: handleWorkflowRunPayloa
     console.error("Repository not registered:", repository.full_name);
     return NextResponse.json({ success: false, message: "Repository not registered" });
   }
+
+  console.log("repository fetched", repositoryRecord.team_id);
 
   const {data: workflowRunRecord, error: workflowRunError} = await supabaseAdmin
     .from("workflow_runs")
@@ -44,8 +46,8 @@ export default async function handleWorkflowRun(payload: handleWorkflowRunPayloa
           ? payload.workflow_run.updated_at
           : null,
       html_url: payload.workflow_run.html_url,
-      run_attempt: payload.workflow_run.run_attempt,
-      run_number: payload.workflow_run.run_number,
+      // run_attempt: payload.workflow_run.run_attempt,
+      // run_number: payload.workflow_run.run_number,
     }, { onConflict: "github_run_id" })
     .select("id")
     .single();
@@ -53,11 +55,13 @@ export default async function handleWorkflowRun(payload: handleWorkflowRunPayloa
     // const workflowRunRecord = workflowRun as WorkflowRunRecord;
 
 
+
 if (workflowRunError || !workflowRunRecord) {
   console.error("Error or no record found:", workflowRunError);
   return NextResponse.json({ success: false, message: "Error or no record found of actions" }); 
 }
 
+console.log("Workflow table created", workflowRunRecord.id);
 
   if (payload.workflow_run.conclusion !== "failure") {
     if (payload.workflow_run.conclusion === "success") {
@@ -65,9 +69,11 @@ if (workflowRunError || !workflowRunRecord) {
     } else if (payload.workflow_run.conclusion === null) {
       return NextResponse.json({ success: true, message: "Workflow run is still in progress" });
     }
-    return NextResponse.json({ success: false, message: `Workflow run is ${payload.workflow_run.conclusion}` });
+    return NextResponse.json({ success: true, message: `Workflow run is ${payload.workflow_run.conclusion}` });
 
   }
+
+  console.log("canme to failure part");
 
   const { data: teamData, error: teams_error } = await supabaseAdmin
     .from("teams")
@@ -79,6 +85,8 @@ if (workflowRunError || !workflowRunRecord) {
     console.error("GitHub installation ID not found for team:", repositoryRecord.team_id);
     return NextResponse.json({ success: false, message: "GitHub installation ID not found" });
   }
+
+  console.log("github_installation_id", teamData.github_installation_id);
 
   const octokit = await getInstallationClient(teamData.github_installation_id);
 
@@ -95,6 +103,8 @@ if (workflowRunError || !workflowRunRecord) {
     console.warn("No jobs found for workflow run:", payload.workflow_run.id);
     return NextResponse.json({ success: false, message: "No jobs found for workflow run" });
   }
+
+  console.log("came to the jobs_update part");
 
   for (const job of workflowJobsData.jobs) {
     if (job.conclusion !== "failure") continue;
@@ -167,8 +177,10 @@ if (workflowRunError || !workflowRunRecord) {
             onConflict: "workflow_job_id,step_number",
           }
         );
+        console.log("workflow_jobs and the steps created", workflowJobRecord.id);
     }
   }
+
 
   try{
   const { url: redirectUrl } = await octokit.request(
@@ -203,10 +215,11 @@ if (workflowRunError || !workflowRunRecord) {
     });
 
   if (uploadError) throw uploadError;
+  console.log("log uploaded to the storage");
 
   // 4. Insert metadata into the Database
   const { error: dbError } = await supabaseAdmin
-    .from("logs_table_name") // Your table name
+    .from("workflow_logs") // Your table name
     .insert({
       workflow_run_id: workflowRunRecord.id,
       team_id: repositoryRecord.team_id,

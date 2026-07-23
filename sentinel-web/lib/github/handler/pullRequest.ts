@@ -15,6 +15,8 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
 
   if (!repoRecord) return;
 
+  console.log("repository fetched", repoRecord);
+
     // 3. Log the event for the Dashboard timeline
   const details = getPullRequestEventMessage(
     action, 
@@ -46,6 +48,8 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
 
   if (prError || !prRecord) return;
 
+  console.log("row created inthe workflowRun", prRecord.id);
+
 
   await supabaseAdmin.from("workflow_events").insert({
     // We link it to the PR if you have a pr_id column in events, 
@@ -60,6 +64,8 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
 
 
   if (prError) throw prError;
+
+  console.log("workflow events created ");
 
   return NextResponse.json({
     success: true,

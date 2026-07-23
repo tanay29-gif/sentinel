@@ -1,6 +1,8 @@
 <!-- first thing to do si the 
 ci /cd workflow complete it i is only the github it should be done early  -->
 
+make the changes in the first sync regarding the new tables and all first the logs one commits to the push takes the push_id for the 
+
 done above part now the showing part the main page where it requires the event timeline  form the events i can take by time and show three things to show one dot wiht the colour thnet he description adn the time 
 
 
@@ -32,3 +34,6 @@ Health Score: Aggregated percentage of successful vs failed runs.
 Dependencies: If Service A relies on Service B.
 Active Alerts: Any "Incident" currently linked to this service.
 How to show it: Use Grid Cards (like your Repository cards but bigger). Each card should have a small "Sparkline" (mini graph) showing the last 10 build statuses.
+
+
+

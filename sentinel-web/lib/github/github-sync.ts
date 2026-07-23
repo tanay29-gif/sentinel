@@ -118,8 +118,8 @@ export async function syncInstallationData(
           branch_id: defaultBranch?.id ?? null,
           sha: commit.sha,
           message: commit.commit.message.split("\n")[0] || "Commit",
-          author_handle: commit.author?.login ?? commit.commit.author?.name ?? null,
-          author_avatar_url: commit.author?.avatar_url ?? null,
+          author_name: commit.commit.author?.name ?? null,
+          url: commit.html_url, 
           committed_at: commit.commit.author?.date ?? new Date().toISOString(),
         },
         { onConflict: "sha" }

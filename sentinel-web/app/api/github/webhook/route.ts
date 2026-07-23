@@ -38,13 +38,16 @@ export async function POST(req: NextRequest) {
             { status: 401 }
         );
     }
-
+    console.log("Signature is valid");
     // Signature is valid
     // NOW parse the JSON
     const payload = JSON.parse(rawBody);
 
+    // console.log("Payload is this", payload);
+
+
     const event = req.headers.get("x-github-event");
-  
+   console.log("Event is this", event);
 
   switch (event) {
 
