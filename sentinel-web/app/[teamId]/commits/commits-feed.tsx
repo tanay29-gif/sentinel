@@ -20,270 +20,221 @@ type ActivityItem = {
   type: "push" | "pr-open" | "pr-merged" | "commit";
   tone: "emerald" | "amber" | "slate" | "red";
 };
+// id: `pr-${pr.id}`,
+// time: formatTime(pr.updated_at || pr.created_at),
+// actor: pr.author,
+// title: `PR #${pr.number} ${pr.state}`,
+// detail: pr.title,
+// type: pr.merged || pr.state === 'merged' ? "pr-merged" : "pr-open",
+// tone: pr.merged || pr.state === 'merged' ? "slate" : "amber"
 
-const fallbackCommits: Commit[] = [
-  {
-    id: "c1",
-    repo: "sentinel-web",
-    branch: "main",
-    commit: "4f9d2ab",
-    message: "Improve release health cards and incident context",
-    author: "Tanay",
-    time: "12:30",
-    url: "#",
-  },
-  {
-    id: "c2",
-    repo: "sentinel-api",
-    branch: "main",
-    commit: "9b1e2cf",
-    message: "Add workflow log normalization for CI insights",
-    author: "Rahul",
-    time: "11:48",
-    url: "#",
-  },
-  {
-    id: "c3",
-    repo: "sentinel-web",
-    branch: "release/1.2",
-    commit: "1dce883",
-    message: "Tune dashboard layout for observability ops",
-    author: "Asha",
-    time: "10:22",
-    url: "#",
-  },
-];
+// const fallbackCommits: Commit[] = [
+//   {
+//     id: "c1",
+//     repo: "sentinel-web",
+//     branch: "main",
+//     commit: "4f9d2ab",
+//     message: "Improve release health cards and incident context",
+//     author: "Tanay",
+//     time: "12:30",
+//     url: "#",
+//   },
+//   {
+//     id: "c2",
+//     repo: "sentinel-api",
+//     branch: "main",
+//     commit: "9b1e2cf",
+//     message: "Add workflow log normalization for CI insights",
+//     author: "Rahul",
+//     time: "11:48",
+//     url: "#",
+//   },
+//   {
+//     id: "c3",
+//     repo: "sentinel-web",
+//     branch: "release/1.2",
+//     commit: "1dce883",
+//     message: "Tune dashboard layout for observability ops",
+//     author: "Asha",
+//     time: "10:22",
+//     url: "#",
+//   },
+// ];
 
-const fallbackActivity: ActivityItem[] = [
-  {
-    id: "a1",
-    time: "12:30",
-    actor: "Tanay",
-    title: "Pushed 3 commits to main",
-    detail: "sentinel-web · 3 new changes shipped to production readiness",
-    type: "push",
-    tone: "emerald",
-  },
-  {
-    id: "a2",
-    time: "12:20",
-    actor: "Ops",
-    title: "PR #45 opened for rollout validation",
-    detail: "Waiting on review before deployment confidence is raised",
-    type: "pr-open",
-    tone: "amber",
-  },
-  {
-    id: "a3",
-    time: "12:15",
-    actor: "Rahul",
-    title: "PR #44 merged into main",
-    detail: "Incident triage improvements are now live in the branch",
-    type: "pr-merged",
-    tone: "slate",
-  },
-  {
-    id: "a4",
-    time: "12:00",
-    actor: "Asha",
-    title: "Committed a metrics polish pass",
-    detail: "Improved telemetry cards and reduced noise for deployment checks",
-    type: "commit",
-    tone: "red",
-  },
-];
+// const fallbackActivity: ActivityItem[] = [
+//   {
+//     id: "a1",
+//     time: "12:30",
+//     actor: "Tanay",
+//     title: "Pushed 3 commits to main",
+//     detail: "sentinel-web · 3 new changes shipped to production readiness",
+//     type: "push",
+//     tone: "emerald",
+//   },
+//   {
+//     id: "a2",
+//     time: "12:20",
+//     actor: "Ops",
+//     title: "PR #45 opened for rollout validation",
+//     detail: "Waiting on review before deployment confidence is raised",
+//     type: "pr-open",
+//     tone: "amber",
+//   },
+//   {
+//     id: "a3",
+//     time: "12:15",
+//     actor: "Rahul",
+//     title: "PR #44 merged into main",
+//     detail: "Incident triage improvements are now live in the branch",
+//     type: "pr-merged",
+//     tone: "slate",
+//   },
+//   {
+//     id: "a4",
+//     time: "12:00",
+//     actor: "Asha",
+//     title: "Committed a metrics polish pass",
+//     detail: "Improved telemetry cards and reduced noise for deployment checks",
+//     type: "commit",
+//     tone: "red",
+//   },
+// ];
+
+type CommitsFeedProps = {
+  teamId: string;
+};
 
 
-
-export function CommitsFeed() {
+export function CommitsFeed({ teamId }: CommitsFeedProps) {
 
   const supabase = createClient();
 
-  // const [commits, setCommits] = useState<any[]>([]);
-  // const [activity, setActivity] = useState<any[]>([]);
-  // const [summary, setSummary] = useState({
-  //   commitsToday: 0,
-  //   openPRs: 0,
-  //   mergedPRs: 0,
-  //   topContributor: "N/A"
-  // });
-  // const [loading, setLoading] = useState(true);
+  const [commits, setCommits] = useState<any[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [summary, setSummary] = useState({
+    commitsToday: 0,
+    openPRs: 0,
+    mergedPRs: 0,
+    topContributor: "N/A"
+  });
+  const [loading, setLoading] = useState(true);
 
-  // const formatTime = (date: string) =>
-  //   new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const formatTime = (date: string) =>
+    new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
-  // const loadData = async () => {
-  //   // 1. Fetch Summary Stats
-  //   const { data: pushData } = await supabase.from("push_events").select("commit_count, pusher, pushed_at");
-  //   const { data: prData } = await supabase.from("pull_requests").select("state, merged");
+  const loadData = async () => {
+    // 1. Fetch Summary Stats
+    const { data: pushData } = await supabase
+      .from("push_events")
+      .select("commit_count, pusher, pushed_at")
+      .eq("team_id", teamId);
 
-  //   // Calculate Summary
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0);
+    const { data: prData } = await supabase
+      .from("pull_requests")
+      .select("state, merged")
+      .eq("team_id", teamId);
 
-  //   const commitsToday = pushData?.filter(p => new Date(p.pushed_at) >= today)
-  //     .reduce((acc, curr) => acc + (curr.commit_count || 1), 0) || 0;
 
-  //   const openPRs = prData?.filter(pr => pr.state === 'open').length || 0;
-  //   const mergedPRs = prData?.filter(pr => pr.merged || pr.state === 'merged').length || 0;
+    console.log("pushData", pushData);
+    console.log("prData", prData);
 
-  //   // Find Top Contributor
-  //   const counts = pushData?.reduce((acc: any, curr) => {
-  //     acc[curr.pusher] = (acc[curr.pusher] || 0) + 1;
-  //     return acc;
-  //   }, {});
-  //   const topContributor = counts ? Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b) : "N/A";
+    // Calculate Summary
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  //   setSummary({ commitsToday, openPRs, mergedPRs, topContributor });
+    const commitsToday = pushData?.filter(p => new Date(p.pushed_at) >= today)
+      .reduce((acc, curr) => acc + (curr.commit_count || 1), 0) || 0;
 
-  //   // 2. Fetch Lists
-  //   const { data: latestPushes } = await supabase.from("push_events").select("*").order("pushed_at", { ascending: false }).limit(6);
-  //   const { data: latestPRs } = await supabase.from("pull_requests").select("*").order("updated_at", { ascending: false }).limit(5);
+    const openPRs = prData?.filter(pr => pr.state === 'open').length || 0;
+    const mergedPRs = prData?.filter(pr => pr.merged || pr.state === 'merged').length || 0;
 
-  //   setCommits((latestPushes || []).map(p => ({
-  //     id: p.id,
-  //     repo: "Main Repo",
-  //     branch: p.branch,
-  //     commit: p.after_sha?.substring(0, 7),
-  //     message: p.head_commit_message,
-  //     author: p.pusher,
-  //     time: formatTime(p.pushed_at),
-  //     url: p.compare_url
-  //   })));
+    // Find Top Contributor
+    const counts = pushData?.reduce((acc: any, curr) => {
+      acc[curr.pusher] = (acc[curr.pusher] || 0) + 1;
+      return acc;
+    }, {});
+    const topContributor = counts ? Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b) : "N/A";
 
-  //   const pushAct = (latestPushes || []).map(p => ({
-  //     id: `push-${p.id}`,
-  //     time: formatTime(p.pushed_at),
-  //     actor: p.pusher,
-  //     title: `Pushed ${p.commit_count} commits to ${p.branch}`,
-  //     detail: p.head_commit_message,
-  //     type: "push",
-  //     tone: "emerald"
-  //   }));
+    setSummary({ commitsToday, openPRs, mergedPRs, topContributor });
 
-  //   const prAct = (latestPRs || []).map(pr => ({
-  //     id: `pr-${pr.id}`,
-  //     time: formatTime(pr.updated_at || pr.created_at),
-  //     actor: pr.author,
-  //     title: `PR #${pr.number} ${pr.state}`,
-  //     detail: pr.title,
-  //     type: pr.merged || pr.state === 'merged' ? "pr-merged" : "pr-open",
-  //     tone: pr.merged || pr.state === 'merged' ? "slate" : "amber"
-  //   }));
+    // 2. Fetch Lists
+    const { data: latestPushes } = await supabase
+      .from("push_events")
+      .select("*")
+      .eq("team_id", teamId)
+      .order("pushed_at", { ascending: false })
+      .limit(6);
 
-  //   setActivity([...pushAct, ...prAct].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 8));
-  //   setLoading(false);
-  // };
+    const { data: latestPRs } = await supabase
+      .from("pull_requests")
+      .select("*")
+      .eq("team_id", teamId)
+      .order("updated_at", { ascending: false })
+      .limit(5);
 
-  // useEffect(() => {
-  //   loadData();
+    setCommits((latestPushes || []).map(p => ({
+      id: p.id,
+      repo: "Main Repo",
+      branch: p.branch,
+      commit: p.after_sha?.substring(0, 7),
+      message: p.head_commit_message,
+      author: p.pusher,
+      time: formatTime(p.pushed_at),
+      url: p.compare_url
+    })));
 
-  //   // REALTIME: Listen for new pushes or PR changes
-  //   const channel = supabase.channel('dashboard-pulse')
-  //     .on('postgres_changes', { event: '*', schema: 'public', table: 'push_events' }, () => loadData())
-  //     .on('postgres_changes', { event: '*', schema: 'public', table: 'pull_requests' }, () => loadData())
-  //     .subscribe();
+    const pushAct: ActivityItem[] = (latestPushes || []).map(p => ({
+      id: `push-${p.id}`,
+      time: formatTime(p.pushed_at),
+      actor: p.pusher,
+      title: `Pushed ${p.commit_count} commits to ${p.branch}`,
+      detail: p.head_commit_message,
+      type: "push",
+      tone: "emerald"
+    }));
 
-  //   return () => { supabase.removeChannel(channel); };
-  // }, []);
+    const prAct: ActivityItem[] = (latestPRs || []).map(pr => ({
+      id: `pr-${pr.id}`,
+      time: formatTime(pr.updated_at || pr.created_at),
+      actor: pr.author,
+      title: `PR #${pr.number} ${pr.state}`,
+      detail: pr.title,
+      type: pr.merged || pr.state === 'merged' ? "pr-merged" : "pr-open",
+      tone: pr.merged || pr.state === 'merged' ? "slate" : "amber"
+    }));
 
-  // ... (Your Return statement follows below)
-  
-  const [commits, setCommits] = useState<Commit[]>(fallbackCommits);
-const [activity, setActivity] = useState<ActivityItem[]>(fallbackActivity);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState<string | null>(null);
-
-useEffect(() => {
-  let isMounted = true;
-
-  async function fetchCommits() {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/commits");
-      if (!response.ok) {
-        throw new Error("Failed to fetch commits");
-      }
-
-      const data = await response.json();
-      const nextCommits = (data.commits || []) as Partial<Commit>[];
-
-      const mappedCommits = nextCommits.slice(0, 6).map((commit, index) => ({
-        id: commit.id || `commit-${index}`,
-        repo: commit.repo || "Repository",
-        branch: commit.branch || "main",
-        commit: commit.commit || "unknown",
-        message: commit.message || "No message available",
-        author: commit.author || "Unknown author",
-        time: commit.time || "Just now",
-        url: commit.url || "#",
-      })) as Commit[];
-
-      if (isMounted) {
-        setCommits(mappedCommits.length ? mappedCommits : fallbackCommits);
-        setActivity(
-          mappedCommits.length
-            ? [
-                {
-                  id: `push-${mappedCommits[0].id}`,
-                  time: mappedCommits[0].time,
-                  actor: mappedCommits[0].author,
-                  title: `Pushed ${mappedCommits.length} commits to ${mappedCommits[0].branch}`,
-                  detail: `${mappedCommits[0].repo} · delivery signal updated`,
-                  type: "push",
-                  tone: "emerald",
-                },
-                {
-                  id: `pr-open-${mappedCommits[1]?.id || "1"}`,
-                  time: "Now",
-                  actor: "Ops",
-                  title: `PR review window active for ${mappedCommits[1]?.repo || "delivery"}`,
-                  detail: "Observability checks remain in progress",
-                  type: "pr-open",
-                  tone: "amber",
-                },
-                {
-                  id: `pr-merged-${mappedCommits[2]?.id || "2"}`,
-                  time: "Earlier",
-                  actor: "System",
-                  title: "Merged changes are now available in main",
-                  detail: "Deployment confidence has improved for the current cycle",
-                  type: "pr-merged",
-                  tone: "slate",
-                },
-              ]
-            : fallbackActivity
-        );
-      }
-    } catch (err) {
-      console.error("Error fetching commits:", err);
-      if (isMounted) {
-        setCommits(fallbackCommits);
-        setActivity(fallbackActivity);
-        setError(err instanceof Error ? err.message : "Unknown error");
-      }
-    } finally {
-      if (isMounted) {
-        setLoading(false);
-      }
-    }
-  }
-
-  fetchCommits();
-
-  return () => {
-    isMounted = false;
+    setActivity([...pushAct, ...prAct].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 8));
+    setLoading(false);
   };
-}, []);
 
-  const summary = useMemo(() => {
-    const commitsToday = Math.max(54, commits.length + 46);
-    const openPRs = Math.max(6, Math.min(12, 4 + Math.floor(commits.length / 2)));
-    const mergedPRs = Math.max(14, Math.min(20, 10 + Math.floor(commits.length / 3)));
-    const topContributor = commits[0]?.author || "NA";
+  useEffect(() => {
+    loadData();
 
-    return { commitsToday, openPRs, mergedPRs, topContributor };
-  }, [commits]);
+    const channel = supabase
+      .channel(`dashboard-pulse-${teamId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "push_events",
+          filter: `team_id=eq.${teamId}`,
+        },
+        () => loadData()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "pull_requests",
+          filter: `team_id=eq.${teamId}`,
+        },
+        () => loadData()
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -306,6 +257,13 @@ useEffect(() => {
           <CardContent className="space-y-3">
             {loading ? (
               <p className="text-sm text-slate-500">Loading delivery activity...</p>
+            ) : activity.length === 0 ? (
+              <div className="rounded-md border border-dashed border-slate-200 p-6 text-center">
+                <p className="font-medium text-slate-700">No activities found</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  There are no push events or pull requests for this team yet.
+                </p>
+              </div>
             ) : (
               activity.map((item) => {
                 const iconMap = {
@@ -354,7 +312,16 @@ useEffect(() => {
             </Badge>
           </CardHeader>
           <CardContent className="space-y-3">
-            {commits.map((commit) => (
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading commits...</p>
+            ) : commits.length === 0 ? (
+              <div className="rounded-md border border-dashed border-slate-200 p-6 text-center">
+                <p className="font-medium text-slate-700">No commits found</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  No commits have been pushed for this team yet.
+                </p>
+              </div>
+            ) : (commits.map((commit) => (
               <div key={commit.id} className="rounded-md border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium text-slate-900">{commit.message}</p>
@@ -377,7 +344,7 @@ useEffect(() => {
                   </Button>
                 </div>
               </div>
-            ))}
+            )))}
           </CardContent>
         </Card>
       </section>

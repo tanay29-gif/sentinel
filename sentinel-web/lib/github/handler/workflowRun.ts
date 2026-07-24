@@ -144,7 +144,7 @@ console.log("Workflow table created", workflowRunRecord.id);
         .single();
 
     if (workflowJobError) {
-      console.error(workflowJobError);
+      console.error("Workflow_job error",workflowJobError);
       continue;
     }
     if (!job.steps || job.steps?.length === 0) {
@@ -155,7 +155,7 @@ console.log("Workflow table created", workflowRunRecord.id);
     for (const step of (job.steps ?? [])) {
       if (step.conclusion !== "failure") continue;
 
-      await supabaseAdmin
+      const {error: stepError} = await supabaseAdmin
         .from("workflow_steps")
         .upsert(
           {
@@ -177,6 +177,12 @@ console.log("Workflow table created", workflowRunRecord.id);
             onConflict: "workflow_job_id,step_number",
           }
         );
+         
+        if(stepError){
+          console.error("stepError",stepError);
+          return NextResponse.json({ success: false, message: "stepError" });
+        }
+
         console.log("workflow_jobs and the steps created", workflowJobRecord.id);
     }
   }
@@ -214,7 +220,11 @@ console.log("Workflow table created", workflowRunRecord.id);
       upsert: true,
     });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+     console.error("Log Upload Error:", uploadError);
+    return NextResponse.json({ success: false, message: "Log Upload Error" })
+
+  }
   console.log("log uploaded to the storage");
 
   // 4. Insert metadata into the Database
@@ -230,7 +240,10 @@ console.log("Workflow table created", workflowRunRecord.id);
       created_at: new Date().toISOString(),
     });
 
-  if (dbError) throw dbError;
+  if (dbError) {
+    console.error("logs error database", dbError);
+    return NextResponse.json({ success: false, message: "logs error database" });
+  };
 
   return new Response(JSON.stringify({ success: true }), { status: 200 });
 

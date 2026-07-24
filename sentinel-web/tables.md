@@ -85,6 +85,20 @@
 | `due_at` | `timestamptz` |  Nullable |
 | `created_at` | `timestamptz` |  |
 
+## Table `logs`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `team_id` | `uuid` |  Nullable |
+| `service_id` | `uuid` |  Nullable |
+| `level` | `text` |  |
+| `message` | `text` |  |
+| `metadata` | `jsonb` |  |
+| `created_at` | `timestamptz` |  |
+| `workflow_run_id` | `uuid` |  Nullable |
 
 ## Table `profiles`
 
@@ -137,13 +151,13 @@
 |------|------|-------------|
 | `id` | `uuid` | Primary |
 | `repository_id` | `uuid` |  |
-| `branch_id` | `uuid` |  Nullable |
 | `sha` | `text` |  Unique |
 | `message` | `text` |  |
-| `author_handle` | `text` |  Nullable |
-| `author_avatar_url` | `text` |  Nullable |
+| `author_name` | `text` |  Nullable |
 | `committed_at` | `timestamptz` |  |
 | `created_at` | `timestamptz` |  |
+| `push_id` | `uuid` |  Nullable |
+| `url` | `text` |  Nullable |
 
 ## Table `service_health`
 
@@ -194,14 +208,16 @@
 |------|------|-------------|
 | `id` | `uuid` | Primary |
 | `workflow_run_id` | `uuid` |  |
-| `github_job_id` | `int8` |  Nullable |
+| `github_job_id` | `int8` |  Nullable Unique |
 | `name` | `text` |  Nullable |
-| `status` | `text` |  Nullable |
 | `conclusion` | `text` |  Nullable |
 | `runner_name` | `text` |  Nullable |
 | `started_at` | `timestamptz` |  Nullable |
 | `completed_at` | `timestamptz` |  Nullable |
-| `failure_message` | `text` |  Nullable |
+| `github_run_id` | `int8` |  Nullable |
+| `runner_group_name` | `text` |  Nullable |
+| `status` | `text` |  Nullable |
+| `html_url` | `text` |  Nullable |
 
 ## Table `workflow_steps`
 
@@ -213,10 +229,10 @@
 | `workflow_job_id` | `uuid` |  |
 | `step_name` | `text` |  Nullable |
 | `status` | `text` |  Nullable |
-| `number` | `int4` |  Nullable |
+| `step_number` | `int4` |  Nullable |
 | `started_at` | `timestamptz` |  Nullable |
 | `completed_at` | `timestamptz` |  Nullable |
-| `failure_message` | `text` |  Nullable |
+| `conclusion` | `text` |  Nullable |
 
 ## Table `pull_requests`
 
@@ -251,7 +267,7 @@
 | Name | Type | Constraints |
 |------|------|-------------|
 | `id` | `uuid` | Primary |
-| `workflow_run_id` | `uuid` |  |
+| `workflow_run_id` | `uuid` |  Nullable |
 | `repository_id` | `uuid` |  |
 | `team_id` | `uuid` |  |
 | `github_job_id` | `int8` |  Nullable |
@@ -260,6 +276,7 @@
 | `title` | `text` |  Nullable |
 | `description` | `text` |  Nullable |
 | `created_at` | `timestamptz` |  Nullable |
+| `workflow_job_id` | `int8` |  Nullable |
 
 ## Table `deployments`
 
@@ -345,10 +362,27 @@
 |--------|---------|-------|--------|-------|------------|
 | `members can read team data` | SELECT | public | PERMISSIVE | `(id IN ( SELECT m.team_id    FROM memberships m   WHERE (m.user_id = auth.uid())))` | — |
 
+### `pull_requests`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `Allow public read` | SELECT | public | PERMISSIVE | `true` | — |
+
+### `logs`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `Members can view logs` | SELECT | public | PERMISSIVE | `(EXISTS ( SELECT 1    FROM memberships m   WHERE ((m.team_id = logs.team_id) AND (m.user_id = auth.uid()))))` | — |
 
 ### `memberships`
 
 | Policy | Command | Roles | Action | USING | WITH CHECK |
 |--------|---------|-------|--------|-------|------------|
 | `members can read memberships` | SELECT | public | PERMISSIVE | `(auth.uid() = user_id)` | — |
+
+### `push_events`
+
+| Policy | Command | Roles | Action | USING | WITH CHECK |
+|--------|---------|-------|--------|-------|------------|
+| `Allow public read` | SELECT | public | PERMISSIVE | `true` | — |
 

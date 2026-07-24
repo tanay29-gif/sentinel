@@ -5,7 +5,7 @@ import { DeploymentsFeed } from "./deployments-feed";
 export default async function DeploymentsPage({ params }: { params: Promise<{ teamId: string }> }) {
   return (
     <AppShell params ={params}>
-      <PageHeader eyebrow="GitHub / GitLab" title="Deployment & Commit Tracking" action="Connect repo" />
+      <PageHeader eyebrow="GitHub / GitLab" title="CI/CD Pipeline" action="View runs" />
       <DeploymentsFeed />
     </AppShell>
   );

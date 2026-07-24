@@ -45,6 +45,7 @@ const { workflow_job, repository } = payload;
     workflow_run_id: runRecord.id, // This UUID is now guaranteed to exist
     workflow_job_id: workflow_job.id,
     repository_id: repoRecord.id,
+    status: workflow_job.status,
     team_id: repoRecord.team_id,
     event_type: eventType,
     level: details.level,
