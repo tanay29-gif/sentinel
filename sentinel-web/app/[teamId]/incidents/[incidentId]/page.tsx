@@ -76,6 +76,12 @@ interface IncidentResponse {
   logPath: string;
   userRole: string;
 }
+interface Analysis {
+            rootCause: string ,
+            explanation: string,
+            suggestedFix: string,
+            confidence: string,
+}
 
 function formatDate(date: string) {
   return new Date(date).toLocaleString("en-US", {
@@ -120,7 +126,7 @@ export default function IncidentDetailsPage({
 
   const [loadingAI, setLoadingAI] = useState(false);
 
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
   const [logPath, setLogPath] = useState("");
 

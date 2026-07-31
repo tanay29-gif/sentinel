@@ -151,7 +151,7 @@ export default function IncidentsPage({ params }: { params: Promise<{ teamId: st
 
               <p className="text-sm text-slate-500 mt-2">
 
-                Sentinel hasn't detected any active issues.
+                Sentinel hasn t detected any active issues.
 
               </p>
 

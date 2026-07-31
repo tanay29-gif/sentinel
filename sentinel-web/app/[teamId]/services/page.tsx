@@ -10,7 +10,9 @@ import { getGrafanaMetrics } from "@/lib/grafana/grafana-client";
 import { processGrafanaData } from "@/lib/grafana/grafana-data";
 import { createClient } from "@/lib/supabase/server";
 import ServiceList from "./ServiceList";
-import type { Service } from "@/lib/interface";
+import type { ServiceMetrics } from "@/lib/interface";
+
+
 
 
 export default async function ServicesPage({ params }: { params: Promise<{ teamId: string }> }) {
@@ -28,7 +30,7 @@ export default async function ServicesPage({ params }: { params: Promise<{ teamI
     console.error("Error fetching services:", error);
   }
 
-  let allMetrics: Record<string, any> = {};
+  let allMetrics: Record<string, ServiceMetrics> = {};
   let serviceNames: { id: string; name: string, base_url: string}[] = dbServices?.map(s => { return { id: s.id, name: s.name, base_url: s.base_url } }) || [];
   let globalUptime = "0.00";
   let averageLatency = 0;
