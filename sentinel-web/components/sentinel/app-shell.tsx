@@ -8,10 +8,10 @@ import { currentUser, getNavItems, NavItem } from "@/lib/data";
 import type { AppShellProps } from "@/lib/interface";
 
 
-
-export async function AppShell({ children ,  params }: AppShellProps) {
-  const resolvedParams = await params;
-  const teamId = resolvedParams.teamId; 
+export function AppShell({ children, teamId }: {
+  children: React.ReactNode;
+  teamId: string;
+}) {
   
   const navItems: NavItem[] = getNavItems(teamId);
 

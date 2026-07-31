@@ -1,3 +1,23 @@
+export type ServiceState =
+  | "no-data"
+  | "operational"
+  | "warning"
+  | "critical"
+  | "offline";
+
+export interface ServiceMetrics {
+  uptimePercentage: number;
+  dailyHistory: {
+    timestamp: number;
+    status: ServiceState;
+  }[];
+  lastLatency: number;
+  lastErrorRate: string;
+  requestRate: number;
+  currentStatus: ServiceState;
+}
+
+
 // --- HELPERS ---
 const THRESHOLDS = {
   latencyWarning: 500,
@@ -6,44 +26,77 @@ const THRESHOLDS = {
   errorCritical: 5,
 };
 
-function computeHealth(latency: number, errorRate: number) {
-  if (latency >= THRESHOLDS.latencyCritical || errorRate >= THRESHOLDS.errorCritical) return "critical";
-  if (latency >= THRESHOLDS.latencyWarning || errorRate >= THRESHOLDS.errorWarning) return "warning";
+function computeHealth(
+  latency: number,
+  errorRate: number
+): ServiceState {
+
+  if (
+    latency >= THRESHOLDS.latencyCritical ||
+    errorRate >= THRESHOLDS.errorCritical
+  ) {
+    return "critical";
+  }
+
+  if (
+    latency >= THRESHOLDS.latencyWarning ||
+    errorRate >= THRESHOLDS.errorWarning
+  ) {
+    return "warning";
+  }
+
   return "operational";
 }
 
-function computeUptime(latencyValues: number[], errorValues: number[]) {
-  if (latencyValues.length === 0) return 100;
-  let healthy = 0;
-  for (let i = 0; i < latencyValues.length; i++) {
-    if (computeHealth(latencyValues[i], errorValues[i]) === "operational") healthy++;
-  }
-  return Number(((healthy / latencyValues.length) * 100).toFixed(2));
+function computeUptime(
+  history: {
+    status: ServiceState;
+  }[]
+) {
+
+  if (history.length === 0) return 0;
+
+  const healthy = history.filter(
+    h => h.status === "operational"
+  ).length;
+
+  return Number(
+    ((healthy / history.length) * 100).toFixed(2)
+  );
 }
 
-export interface ServiceMetrics {
-  uptimePercentage: number;
-  dailyHistory: { timestamp: number; status: string }[];
-  lastLatency: number;
-  lastErrorRate: string;
-  currentStatus: string;
-}
 
-async function processGrafanaData(json: any, dbServices: string[]): Promise<Record<string, ServiceMetrics>> {
+export async function processGrafanaData(
+  json: any,
+  dbServices: string[]
+): Promise<Record<string, ServiceMetrics>> {
+
   const serviceMetricsMap: Record<string, ServiceMetrics> = {};
 
-  dbServices.forEach((serviceName) => {
-    // 1. Find the result for this service
-    const latRes = json.latency?.data?.result?.find((r: any) =>
-      r.metric.service_name === serviceName || r.metric.job === serviceName
-    );
-    const errRes = json.errorRate?.data?.result?.find((r: any) =>
-      r.metric.service_name === serviceName || r.metric.job === serviceName
+  const now = Date.now();
+
+  dbServices.forEach(serviceName => {
+
+    const latRes =
+      json.latency?.data?.result?.find(
+        (r: any) =>
+          r.metric.service_name === serviceName ||
+          r.metric.job === serviceName
+      );
+
+    const errRes =
+      json.errorRate?.data?.result?.find(
+        (r: any) =>
+          r.metric.service_name === serviceName ||
+          r.metric.job === serviceName
+      );
+
+    const reqRes = json.requestRate?.data?.result?.find(
+      (r: any) =>
+        r.metric.service_name === serviceName ||
+        r.metric.job === serviceName
     );
 
-    // 2. Normalize Data Format:
-    // query_range (range mode) uses .values (array)
-    // query (live mode) uses .value (single point)
     const latencyRaw =
       latRes?.values ??
       (latRes?.value ? [latRes.value] : []);
@@ -52,106 +105,242 @@ async function processGrafanaData(json: any, dbServices: string[]): Promise<Reco
       errRes?.values ??
       (errRes?.value ? [errRes.value] : []);
 
-    // 3. If NO data exists at all
-    if (latencyRaw.length === 0) {
+    const requestRaw =
+      reqRes?.values ??
+      (reqRes?.value ? [reqRes.value] : []);
+
+    /**
+     * NO TELEMETRY EVER
+     */
+    const hasLatency = latencyRaw.length > 0;
+    const hasRequestRate = requestRaw.length > 0;
+
+    if (!hasLatency && !hasRequestRate) {
+
       serviceMetricsMap[serviceName] = {
-        uptimePercentage: 100,
+        uptimePercentage: 0,
         dailyHistory: generateEmptyHistory(),
         lastLatency: 0,
         lastErrorRate: "0.00",
-        currentStatus: "degraded" // Mark as degraded if no telemetry found
+        requestRate: 0,
+        currentStatus: "no-data"
       };
+
       return;
     }
 
-    // 4. Process points (handle varying lengths between latency and error metrics)
-    const minLength = Math.min(latencyRaw.length, errorRaw.length);
     const points = [];
 
-    // Fallback: If one metric has data but other doesn't (common in new services)
-    const dataToProcess = minLength > 0 ? minLength : latencyRaw.length;
+    for (let i = 0; i < latencyRaw.length; i++) {
 
-    for (let i = 0; i < dataToProcess; i++) {
       const timestamp = latencyRaw[i][0] * 1000;
-      const errorRate = parseFloat(errorRaw[i]?.[1] ?? "0");
-      // Use 0 if error rate data is missing at this specific timestamp
-      const latency = parseFloat(latencyRaw[i]?.[1] ?? "0");
+
+      /**
+       * Convert seconds -> milliseconds
+       */
+      const latency =
+        parseFloat(latencyRaw[i][1]) * 1000;
+
+      const errorRate =
+        errorRaw.length > 0
+          ? parseFloat(errorRaw[i]?.[1] ?? "0")
+          : 0;
+
+      const requestRate =
+        requestRaw.length > 0
+          ? parseFloat(requestRaw[i]?.[1] ?? requestRaw[0]?.[1] ?? "0")
+          : 0;
 
       points.push({
+
         timestamp,
+
         latency,
+
         errorRate,
-        status: computeHealth(latency, errorRate)
+        requestRate,
+
+        status: computeHealth(
+          latency,
+          errorRate
+        )
+
       });
+
     }
 
-    // 5. Group into 14-day history (Only relevant for Range mode)
-    const dailyMap = new Map<string, { timestamp: number; status: string }>();
-    points.forEach((point) => {
-      const dateKey = new Date(point.timestamp).toISOString().split('T')[0];
-      const currentDayStatus = dailyMap.get(dateKey)?.status || "operational";
+    /**
+     * OFFLINE DETECTION
+     */
 
-      let newStatus = currentDayStatus;
-      if (point.status === "critical" || currentDayStatus === "critical") newStatus = "critical";
-      else if (point.status === "warning" || currentDayStatus === "warning") newStatus = "warning";
+    let currentStatus: ServiceState =
+      points[points.length - 1].status;
 
-      dailyMap.set(dateKey, { timestamp: point.timestamp, status: newStatus });
+    const latest = points[points.length - 1];
+
+    const lastSeen = latest.timestamp;
+
+    const latestRequestRate = latest.requestRate;
+
+    if (
+      Date.now() - lastSeen > 5 * 60 * 1000 &&
+      latestRequestRate === 0
+    ) {
+      currentStatus = "offline";
+    }
+
+    /**
+     * CREATE 14 DAYS
+     */
+
+    const history = generateEmptyHistory();
+
+    points.forEach(point => {
+
+      const day =
+        new Date(point.timestamp)
+          .toISOString()
+          .split("T")[0];
+
+      const index =
+        history.findIndex(h =>
+
+          new Date(h.timestamp)
+            .toISOString()
+            .split("T")[0] === day
+
+        );
+
+      if (index === -1)
+        return;
+
+      const current =
+        history[index].status;
+
+      if (
+        current === "critical" ||
+        point.status === "critical"
+      ) {
+
+        history[index].status = "critical";
+
+      }
+
+      else if (
+        current === "warning" ||
+        point.status === "warning"
+      ) {
+
+        history[index].status = "warning";
+
+      }
+
+      else {
+
+        history[index].status = "operational";
+
+      }
+
     });
 
-    const latencyValues = points.map(p => p.latency);
-    const errorValues = points.map(p => p.errorRate);
 
-    // 6. Final Object Assembly
-    serviceMetricsMap[serviceName] = {
-      // Uptime and history only make sense in 'range' mode, 
-      // but we calculate it anyway so the UI doesn't flicker
-      uptimePercentage: computeUptime(latencyValues, errorValues),
-      dailyHistory: Array.from(dailyMap.values()).sort((a, b) => a.timestamp - b.timestamp).slice(-14),
+serviceMetricsMap[serviceName] = {
 
-      // Live indicators (always the last point in the array)
-      lastLatency: Math.round(latencyValues[latencyValues.length - 1] || 0),
-      lastErrorRate: (errorValues[errorValues.length - 1] || 0).toFixed(2),
-      currentStatus: computeHealth(
-        latencyValues[latencyValues.length - 1] || 0,
-        errorValues[errorValues.length - 1] || 0
-      )
-    };
+  uptimePercentage: computeUptime(history),
+
+  dailyHistory: history,
+
+  lastLatency: Math.round(latest.latency),
+
+  lastErrorRate: latest.errorRate.toFixed(2),
+
+  requestRate: Number(latest.requestRate.toFixed(2)),
+
+  currentStatus
+
+};
+
   });
 
   return serviceMetricsMap;
+
 }
 
 function generateEmptyHistory() {
+
   const history = [];
+
   for (let i = 13; i >= 0; i--) {
+
     const d = new Date();
+
     d.setDate(d.getDate() - i);
-    history.push({ timestamp: d.getTime(), status: "warning" });
+
+    history.push({
+
+      timestamp: d.getTime(),
+
+      status: "no-data" as ServiceState
+
+    });
+
   }
+
   return history;
+
 }
 
 
 /**
  * Main function to be called from your page.tsx
  */
-export async function fetchServiceMetrics(dbServices: string[], mode: 'range' | 'live' = 'range') {
-  try {
-    const serviceParam = dbServices.join(',');
+export async function fetchServiceMetrics(
+    dbServices: string[],
+    mode: "range" | "live" = "range"
+) {
 
-    const response = await fetch(`/api/grafana/metrics?services=${encodeURIComponent(serviceParam)}&mode=${mode}`);
+    try {
 
+        const serviceParam = dbServices.join(",");
 
-    // console.log("Fetching:", url);
+        let url = "";
 
-    if (!response.ok) throw new Error("API response not ok");
+        if (typeof window === "undefined") {
 
-    const json = await response.json();
+            // Running on server
+            const base =
+                process.env.NEXT_PUBLIC_APP_URL ??
+                "http://localhost:3001";
 
-    // Pass both the JSON and the original dbServices array
-    return await processGrafanaData(json, dbServices);
-  } catch (error) {
-    console.error(`Failed to fetch ${mode} metrics:`, error);
-    return {};
-  }
+            url =
+                `${base}/api/grafana/metrics?services=${encodeURIComponent(serviceParam)}&mode=${mode}`;
+
+        } else {
+
+            // Running in browser
+            url =
+                `/api/grafana/metrics?services=${encodeURIComponent(serviceParam)}&mode=${mode}`;
+
+        }
+
+        const response = await fetch(url, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("API response not ok");
+        }
+
+        const json = await response.json();
+
+        return processGrafanaData(json, dbServices);
+
+    } catch (error) {
+
+        console.error(`Failed to fetch ${mode} metrics:`, error);
+
+        return {};
+
+    }
+
 }

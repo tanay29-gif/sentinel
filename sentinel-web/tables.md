@@ -1,388 +1,293 @@
-## Table `teams`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `name` | `text` |  |
-| `created_at` | `timestamptz` |  |
-| `slug` | `text` |  Nullable Unique |
-| `github_installation_id` | `text` |  Nullable Unique |
-| `repository_name` | `text` |  Nullable |
-
-## Table `memberships`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `team_id` | `uuid` |  |
-| `user_id` | `uuid` |  |
-| `role` | `member_role` |  |
-| `created_at` | `timestamptz` |  |
-
-## Table `services`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `team_id` | `uuid` |  |
-| `name` | `text` |  |
-| `health` | `text` |  |
-| `uptime` | `numeric` |  |
-| `created_at` | `timestamptz` |  |
-
-## Table `incidents`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `team_id` | `uuid` |  |
-| `service_id` | `uuid` |  Nullable |
-| `title` | `text` |  |
-| `severity` | `incident_severity` |  |
-| `status` | `incident_status` |  |
-| `summary` | `text` |  |
-| `root_cause_suggestion` | `text` |  |
-| `commander_id` | `uuid` |  Nullable |
-| `sla_due_at` | `timestamptz` |  Nullable |
-| `created_at` | `timestamptz` |  |
-| `resolved_at` | `timestamptz` |  Nullable |
-| `ai_summary` | `text` |  Nullable |
-| `ai_metadata` | `jsonb` |  Nullable |
-
-## Table `incident_events`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `incident_id` | `uuid` |  |
-| `source` | `text` |  |
-| `event` | `text` |  |
-| `provenance` | `jsonb` |  |
-| `created_at` | `timestamptz` |  |
-
-## Table `tasks`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `incident_id` | `uuid` |  Nullable |
-| `title` | `text` |  |
-| `assignee_id` | `uuid` |  Nullable |
-| `priority` | `text` |  |
-| `status` | `text` |  |
-| `due_at` | `timestamptz` |  Nullable |
-| `created_at` | `timestamptz` |  |
-
-## Table `logs`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `team_id` | `uuid` |  Nullable |
-| `service_id` | `uuid` |  Nullable |
-| `level` | `text` |  |
-| `message` | `text` |  |
-| `metadata` | `jsonb` |  |
-| `created_at` | `timestamptz` |  |
-| `workflow_run_id` | `uuid` |  Nullable |
-
-## Table `profiles`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `full_name` | `text` |  Nullable |
-| `avatar_url` | `text` |  Nullable |
-| `updated_at` | `timestamptz` |  Nullable |
-| `github_installation_id` | `text` |  Nullable |
-| `onboarding_completed` | `bool` |  |
-| `created_at` | `timestamptz` |  Nullable |
-
-## Table `repositories`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `team_id` | `uuid` |  |
-| `name` | `text` |  |
-| `full_name` | `text` |  Unique |
-| `provider` | `text` |  Nullable |
-| `html_url` | `text` |  Nullable |
-| `default_branch` | `text` |  Nullable |
-| `created_at` | `timestamptz` |  |
-| `updated_at` | `timestamptz` |  |
-| `repository_github_id` | `int8` |  Nullable |
-
-## Table `branches`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `repository_id` | `uuid` |  |
-| `name` | `text` |  |
-| `is_default` | `bool` |  Nullable |
-| `created_at` | `timestamptz` |  |
-
-## Table `commits`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `repository_id` | `uuid` |  |
-| `sha` | `text` |  Unique |
-| `message` | `text` |  |
-| `author_name` | `text` |  Nullable |
-| `committed_at` | `timestamptz` |  |
-| `created_at` | `timestamptz` |  |
-| `push_id` | `uuid` |  Nullable |
-| `url` | `text` |  Nullable |
-
-## Table `service_health`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `service_name` | `text` |  Unique |
-| `request_count` | `int8` |  Nullable |
-| `error_count` | `int8` |  Nullable |
-| `response_time_ms` | `float8` |  Nullable |
-| `memory_usage_mb` | `float8` |  Nullable |
-| `cpu_usage_percent` | `float8` |  Nullable |
-| `status` | `text` |  Nullable |
-| `last_updated` | `timestamptz` |  Nullable |
-
-## Table `workflow_runs`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `github_run_id` | `int8` |  Unique |
-| `team_id` | `uuid` |  |
-| `repository_id` | `uuid` |  |
-| `deployment_id` | `uuid` |  Nullable |
-| `provider` | `text` |  Nullable |
-| `workflow_name` | `text` |  Nullable |
-| `event` | `text` |  Nullable |
-| `branch` | `text` |  Nullable |
-| `commit_sha` | `text` |  Nullable |
-| `actor` | `text` |  Nullable |
-| `status` | `text` |  Nullable |
-| `conclusion` | `text` |  Nullable |
-| `started_at` | `timestamptz` |  Nullable |
-| `completed_at` | `timestamptz` |  Nullable |
-| `duration_ms` | `int8` |  Nullable |
-| `html_url` | `text` |  Nullable |
-| `created_at` | `timestamptz` |  Nullable |
-
-## Table `workflow_jobs`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `workflow_run_id` | `uuid` |  |
-| `github_job_id` | `int8` |  Nullable Unique |
-| `name` | `text` |  Nullable |
-| `conclusion` | `text` |  Nullable |
-| `runner_name` | `text` |  Nullable |
-| `started_at` | `timestamptz` |  Nullable |
-| `completed_at` | `timestamptz` |  Nullable |
-| `github_run_id` | `int8` |  Nullable |
-| `runner_group_name` | `text` |  Nullable |
-| `status` | `text` |  Nullable |
-| `html_url` | `text` |  Nullable |
-
-## Table `workflow_steps`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `workflow_job_id` | `uuid` |  |
-| `step_name` | `text` |  Nullable |
-| `status` | `text` |  Nullable |
-| `step_number` | `int4` |  Nullable |
-| `started_at` | `timestamptz` |  Nullable |
-| `completed_at` | `timestamptz` |  Nullable |
-| `conclusion` | `text` |  Nullable |
-
-## Table `pull_requests`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `repository_id` | `uuid` |  |
-| `team_id` | `uuid` |  |
-| `github_pr_id` | `int8` |  Unique |
-| `number` | `int4` |  |
-| `title` | `text` |  |
-| `author` | `text` |  |
-| `source_branch` | `text` |  |
-| `target_branch` | `text` |  |
-| `state` | `text` |  |
-| `html_url` | `text` |  Nullable |
-| `merged` | `bool` |  Nullable |
-| `draft` | `bool` |  Nullable |
-| `created_at` | `timestamptz` |  Nullable |
-| `updated_at` | `timestamptz` |  Nullable |
-| `merged_at` | `timestamptz` |  Nullable |
-| `closed_at` | `timestamptz` |  Nullable |
-| `inserted_at` | `timestamptz` |  Nullable |
-| `last_event_message` | `text` |  Nullable |
-
-## Table `workflow_events`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `workflow_run_id` | `uuid` |  Nullable |
-| `repository_id` | `uuid` |  |
-| `team_id` | `uuid` |  |
-| `github_job_id` | `int8` |  Nullable |
-| `event_type` | `text` |  |
-| `level` | `text` |  Nullable |
-| `title` | `text` |  Nullable |
-| `description` | `text` |  Nullable |
-| `created_at` | `timestamptz` |  Nullable |
-| `workflow_job_id` | `int8` |  Nullable |
-
-## Table `deployments`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `github_deployment_id` | `int8` |  Unique |
-| `github_run_id` | `int8` |  Nullable |
-| `status` | `text` |  |
-| `environment` | `text` |  |
-| `commit_sha` | `text` |  |
-| `environment_url` | `text` |  Nullable |
-| `log_url` | `text` |  Nullable |
-| `team_id` | `uuid` |  Nullable |
-| `repository_id` | `uuid` |  Nullable |
-| `created_at` | `timestamptz` |  Nullable |
-| `updated_at` | `timestamptz` |  Nullable |
-| `description` | `text` |  Nullable |
-
-## Table `push_events`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `repository_id` | `uuid` |  |
-| `team_id` | `uuid` |  |
-| `branch` | `text` |  |
-| `before_sha` | `text` |  |
-| `after_sha` | `text` |  |
-| `pusher` | `text` |  |
-| `commit_count` | `int4` |  Nullable |
-| `head_commit_message` | `text` |  Nullable |
-| `compare_url` | `text` |  Nullable |
-| `pushed_at` | `timestamptz` |  |
-| `created_at` | `timestamptz` |  Nullable |
-
-## Table `workflow_logs`
-
-### Columns
-
-| Name | Type | Constraints |
-|------|------|-------------|
-| `id` | `uuid` | Primary |
-| `workflow_run_id` | `uuid` |  |
-| `team_id` | `uuid` |  |
-| `repository_id` | `uuid` |  |
-| `source` | `text` |  Nullable |
-| `storage_path` | `text` |  |
-| `size` | `int8` |  Nullable |
-| `created_at` | `timestamptz` |  Nullable |
-
-## Custom Types / Enums
-
-### `sla_status`
-
-`Healthy` | `Warning` | `Breached`
-
-### `incident_severity`
-
-`SEV-1` | `SEV-2` | `SEV-3` | `SEV-4`
-
-### `incident_status`
-
-`Triage` | `Active` | `Monitoring` | `Resolved`
-
-### `member_role`
-
-`owner` | `incident_commander` | `responder` | `viewer`
-
-### `git_provider`
-
-`github` | `gitlab`
-
-## RLS Policies
-
-### `teams`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `members can read team data` | SELECT | public | PERMISSIVE | `(id IN ( SELECT m.team_id    FROM memberships m   WHERE (m.user_id = auth.uid())))` | — |
-
-### `pull_requests`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `Allow public read` | SELECT | public | PERMISSIVE | `true` | — |
-
-### `logs`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `Members can view logs` | SELECT | public | PERMISSIVE | `(EXISTS ( SELECT 1    FROM memberships m   WHERE ((m.team_id = logs.team_id) AND (m.user_id = auth.uid()))))` | — |
-
-### `memberships`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `members can read memberships` | SELECT | public | PERMISSIVE | `(auth.uid() = user_id)` | — |
-
-### `push_events`
-
-| Policy | Command | Roles | Action | USING | WITH CHECK |
-|--------|---------|-------|--------|-------|------------|
-| `Allow public read` | SELECT | public | PERMISSIVE | `true` | — |
-
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.teams (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  slug text UNIQUE,
+  github_installation_id text UNIQUE,
+  repository_name text,
+  CONSTRAINT teams_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.memberships (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role USER-DEFINED NOT NULL DEFAULT 'responder'::member_role,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT memberships_pkey PRIMARY KEY (id),
+  CONSTRAINT memberships_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.services (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  name text NOT NULL UNIQUE,
+  health text NOT NULL DEFAULT 'Healthy'::text,
+  uptime numeric NOT NULL DEFAULT 100,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  base_url text,
+  CONSTRAINT services_pkey PRIMARY KEY (id),
+  CONSTRAINT services_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.incidents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  service_id uuid,
+  title text NOT NULL,
+  severity USER-DEFINED NOT NULL DEFAULT 'SEV-3'::incident_severity,
+  status USER-DEFINED NOT NULL DEFAULT 'Triage'::incident_status,
+  summary text NOT NULL DEFAULT ''::text,
+  root_cause_suggestion text NOT NULL DEFAULT ''::text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  resolved_at timestamp with time zone,
+  ai_summary text,
+  ai_metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT incidents_pkey PRIMARY KEY (id),
+  CONSTRAINT incidents_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT incidents_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id)
+);
+CREATE TABLE public.incident_events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  incident_id uuid NOT NULL,
+  source text NOT NULL,
+  event text NOT NULL,
+  provenance jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT incident_events_pkey PRIMARY KEY (id),
+  CONSTRAINT incident_events_incident_id_fkey FOREIGN KEY (incident_id) REFERENCES public.incidents(id)
+);
+CREATE TABLE public.tasks (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  incident_id uuid,
+  title text NOT NULL,
+  assignee_id uuid,
+  priority text NOT NULL DEFAULT 'P2'::text,
+  status text NOT NULL DEFAULT 'Open'::text,
+  due_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT tasks_pkey PRIMARY KEY (id),
+  CONSTRAINT tasks_incident_id_fkey FOREIGN KEY (incident_id) REFERENCES public.incidents(id),
+  CONSTRAINT tasks_assignee_id_fkey FOREIGN KEY (assignee_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid,
+  service_id uuid,
+  level text NOT NULL,
+  message text NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  workflow_run_id uuid,
+  CONSTRAINT logs_pkey PRIMARY KEY (id),
+  CONSTRAINT logs_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT logs_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id),
+  CONSTRAINT logs_workflow_run_id_fkey FOREIGN KEY (workflow_run_id) REFERENCES public.workflow_runs(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  full_name text,
+  avatar_url text,
+  updated_at timestamp with time zone DEFAULT now(),
+  github_installation_id text,
+  onboarding_completed boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone,
+  email text UNIQUE,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.repositories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  name text NOT NULL,
+  full_name text NOT NULL UNIQUE,
+  provider text DEFAULT 'github'::text,
+  html_url text,
+  default_branch text DEFAULT 'main'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  repository_github_id bigint,
+  CONSTRAINT repositories_pkey PRIMARY KEY (id),
+  CONSTRAINT repositories_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.branches (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  repository_id uuid NOT NULL,
+  name text NOT NULL,
+  is_default boolean DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT branches_pkey PRIMARY KEY (id),
+  CONSTRAINT branches_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id)
+);
+CREATE TABLE public.commits (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  repository_id uuid NOT NULL,
+  sha text NOT NULL UNIQUE,
+  message text NOT NULL,
+  author_name text,
+  committed_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  push_id uuid,
+  url text,
+  CONSTRAINT commits_pkey PRIMARY KEY (id),
+  CONSTRAINT commits_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT commits_push_id_fkey FOREIGN KEY (push_id) REFERENCES public.push_events(id)
+);
+CREATE TABLE public.service_health (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  service_name text NOT NULL UNIQUE,
+  request_count bigint DEFAULT 0,
+  error_count bigint DEFAULT 0,
+  response_time_ms double precision DEFAULT 0,
+  memory_usage_mb double precision DEFAULT 0,
+  cpu_usage_percent double precision DEFAULT 0,
+  status text DEFAULT 'healthy'::text,
+  last_updated timestamp with time zone DEFAULT now(),
+  CONSTRAINT service_health_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.workflow_runs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  github_run_id bigint NOT NULL UNIQUE,
+  team_id uuid NOT NULL,
+  repository_id uuid NOT NULL,
+  deployment_id uuid,
+  provider text,
+  workflow_name text,
+  event text,
+  branch text,
+  commit_sha text,
+  actor text,
+  status text,
+  conclusion text,
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  duration_ms bigint,
+  html_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT workflow_runs_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_workflow_runs_repository FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT fk_workflow_runs_team FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.workflow_jobs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  workflow_run_id uuid NOT NULL,
+  github_job_id bigint UNIQUE,
+  name text,
+  conclusion text,
+  runner_name text,
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  github_run_id bigint,
+  runner_group_name text,
+  status text,
+  html_url text,
+  CONSTRAINT workflow_jobs_pkey PRIMARY KEY (id),
+  CONSTRAINT workflow_jobs_workflow_run_id_fkey FOREIGN KEY (workflow_run_id) REFERENCES public.workflow_runs(id)
+);
+CREATE TABLE public.workflow_steps (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  workflow_job_id uuid NOT NULL,
+  step_name text,
+  status text,
+  step_number integer,
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  conclusion text,
+  CONSTRAINT workflow_steps_pkey PRIMARY KEY (id),
+  CONSTRAINT workflow_steps_workflow_job_id_fkey FOREIGN KEY (workflow_job_id) REFERENCES public.workflow_jobs(id)
+);
+CREATE TABLE public.pull_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  repository_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  github_pr_id bigint NOT NULL UNIQUE,
+  number integer NOT NULL,
+  title text NOT NULL,
+  author text NOT NULL,
+  source_branch text NOT NULL,
+  target_branch text NOT NULL,
+  state text NOT NULL,
+  html_url text,
+  merged boolean DEFAULT false,
+  draft boolean DEFAULT false,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  merged_at timestamp with time zone,
+  closed_at timestamp with time zone,
+  inserted_at timestamp with time zone DEFAULT now(),
+  last_event_message text,
+  CONSTRAINT pull_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT pull_requests_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT pull_requests_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.workflow_events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  workflow_run_id uuid,
+  repository_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  github_job_id bigint,
+  event_type text NOT NULL,
+  level text,
+  title text,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  workflow_job_id bigint,
+  status text,
+  CONSTRAINT workflow_events_pkey PRIMARY KEY (id),
+  CONSTRAINT workflow_events_workflow_run_id_fkey FOREIGN KEY (workflow_run_id) REFERENCES public.workflow_runs(id),
+  CONSTRAINT workflow_events_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT workflow_events_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.deployments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  github_deployment_id bigint NOT NULL UNIQUE,
+  github_run_id bigint,
+  status text NOT NULL,
+  environment text NOT NULL,
+  commit_sha text NOT NULL,
+  environment_url text,
+  log_url text,
+  team_id uuid,
+  repository_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  description text,
+  repository_full_name text,
+  workflow_run_id uuid,
+  CONSTRAINT deployments_pkey PRIMARY KEY (id),
+  CONSTRAINT deployments_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT deployments_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT deployments_workflow_run_id_fkey FOREIGN KEY (workflow_run_id) REFERENCES public.workflow_runs(id)
+);
+CREATE TABLE public.push_events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  repository_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  branch text NOT NULL,
+  before_sha text NOT NULL,
+  after_sha text NOT NULL,
+  pusher text NOT NULL,
+  commit_count integer DEFAULT 0,
+  head_commit_message text,
+  compare_url text,
+  pushed_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT push_events_pkey PRIMARY KEY (id),
+  CONSTRAINT push_events_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id),
+  CONSTRAINT push_events_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.workflow_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  workflow_run_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  repository_id uuid NOT NULL,
+  source text DEFAULT 'github'::text,
+  storage_path text NOT NULL,
+  size bigint,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT workflow_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT workflow_logs_workflow_run_id_fkey FOREIGN KEY (workflow_run_id) REFERENCES public.workflow_runs(id),
+  CONSTRAINT workflow_logs_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT workflow_logs_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES public.repositories(id)
+);

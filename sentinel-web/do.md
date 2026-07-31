@@ -37,3 +37,25 @@ How to show it: Use Grid Cards (like your Repository cards but bigger). Each car
 
 
 
+now for the phase two we have to do this 
+
+Feature	Technology
+Metrics	✅ OpenTelemetry → Grafana Cloud (Mimir)
+Logs	✅ OpenTelemetry Logs → Grafana Cloud Loki
+Health Monitoring	✅ /health endpoint + periodic checks stored in your database
+Traces	✅ OpenTelemetry → Grafana Tempo (optional but recommended)
+
+
+Health	/health returns non-200 or times out	Create or update a SEV-1 incident
+Grafana	Error rate > 30%	Create or update a SEV-1 incident
+Grafana	Error rate 10–30%	Create or update a SEV-2 incident
+Grafana	Latency above threshold for N minutes	Create or update a SEV-2 incident
+GitHub deployment_status	state = failure	Create a SEV-2 incident
+GitHub deployment_status	state = success	Record an event and start a short observation window
+GitHub workflow_run	conclusion = failure	Create a SEV-3 incident
+GitHub workflow_job	Job failed	Add an event to the related incident if one exists
+GitHub push / pull_request	Any	Record events only
+
+First failure → create incident + event.
+While it remains down → no new events.
+Recovery → add recovery event.

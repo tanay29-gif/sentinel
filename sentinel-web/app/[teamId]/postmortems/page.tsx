@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/sentinel/page-header";
 import { timeline } from "@/lib/data";
 
 export default async function PostmortemsPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
+
   return (
-    <AppShell params={params}>
+    <AppShell teamId={teamId}>
       <PageHeader eyebrow="Learning loop" title="Auto-generated Postmortems" action="Generate draft" />
       <Card className="rounded-md">
         <CardHeader><CardTitle>INC-1042 Draft</CardTitle></CardHeader>

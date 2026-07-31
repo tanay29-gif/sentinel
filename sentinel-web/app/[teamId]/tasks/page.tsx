@@ -8,7 +8,7 @@ export default async function TasksPage({ params }: { params: Promise<{ teamId: 
   const { teamId } = await params;
 
   return (
-    <AppShell params={params}>
+<AppShell teamId={teamId}>
       <PageHeader eyebrow="SLA workflow" title="Assignments & Escalations" action="Assign task" />
       <div className="grid gap-4 md:grid-cols-3">
         {["Open", "In progress", "Queued"].map((column) => (

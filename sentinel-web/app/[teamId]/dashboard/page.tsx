@@ -105,7 +105,7 @@ export default async function DashboardPage({ params }: { params: Params }) {
   const repoById = new Map(repoRows.map((repo) => [repo.id, repo]));
 
   return (
-    <AppShell params={params}>
+    <AppShell teamId={teamId}>
       <PageHeader eyebrow={team.name} title="Sentinel dashboard" action="Create incident" />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

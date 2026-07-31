@@ -245,10 +245,121 @@ console.log("Workflow table created", workflowRunRecord.id);
     return NextResponse.json({ success: false, message: "logs error database" });
   };
 
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
+  const { data: existingIncident } = await supabaseAdmin
+  .from("incidents")
+  .select("id")
+  .eq("source", "workflow_run")
+  .eq("source_reference", payload.workflow_run.id.toString())
+  .maybeSingle();
 
+if (existingIncident) {
+  return new Response(
+    JSON.stringify({ success: true, message: "Incident already exists" }),
+    { status: 200 }
+  );
+}
+
+  let severity = "SEV-4";
+
+const branch = payload.workflow_run.head_branch;
+
+if (branch === "main" || branch === "master") {
+    severity = "SEV-2";
+}
+else if (branch === "develop") {
+    severity = "SEV-3";
+}
+else {
+    severity = "SEV-4";
+}
+
+const { data: incident, error: incidentError} = await supabaseAdmin
+.from("incidents")
+.insert({
+    team_id: repositoryRecord.team_id,
+
+    service_id: null,
+
+    title: "Workflow Failed",
+
+    severity,
+
+    status: "Active",
+
+    summary: `${payload.workflow_run.name} failed on branch ${branch}`,
+
+    root_cause_suggestion: null,
+
+    ai_metadata: {
+    workflowRunId: payload.workflow_run.id,
+    repository: repository.full_name,
+    branch,
+    actor: payload.workflow_run.actor.login
+},
+
+    source: "workflow_run",
+
+    source_reference: payload.workflow_run.id.toString(),
+})
+.select()
+.single();
+
+if(incidentError){
+  return new Response(JSON.stringify({ error: incidentError.message }), { status: 500 });
+}
+
+
+const {error: incident_eventsError}=await supabaseAdmin
+.from("incident_events")
+.insert({
+
+    incident_id: incident.id,
+
+    source: "github",
+
+    event: `Workflow "${payload.workflow_run.name}" failed`,
+
+    provenance: {
+
+        workflowRunId: payload.workflow_run.id,
+
+        workflowName: payload.workflow_run.name,
+
+        actor: payload.workflow_run.actor.login,
+
+        branch: payload.workflow_run.head_branch,
+
+        commit: payload.workflow_run.head_sha,
+
+        htmlUrl: payload.workflow_run.html_url,
+
+        logPath: storagePath,
+
+        failedJobs: workflowJobsData.jobs
+            .filter(job => job.conclusion === "failure")
+            .map(job => ({
+                id: job.id,
+                name: job.name,
+            })),
+
+        failedSteps: workflowJobsData.jobs
+            .flatMap(job => job.steps ?? [])
+            .filter(step => step.conclusion === "failure")
+            .map(step => ({
+                number: step.number,
+                name: step.name,
+            }))
+    }
+});
+
+if(incident_eventsError){
+    return new Response(JSON.stringify({ error: incident_eventsError.message }), { status: 500 });
+}
+return new Response(JSON.stringify({ success: true }), { status: 200 });
+  
 } catch (error : any) {
   console.error("Log Storage Error:", error);
   return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 }
+
 }

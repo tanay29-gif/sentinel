@@ -26,13 +26,15 @@ export interface NavItem {
 export const getNavItems = (teamId: string): NavItem[] => [
 
 { href: `/${teamId}/incidents`, label: "Incidents", icon: Siren },
-{ href: `/${teamId}/logs`, label: "Logs", icon: AlertTriangle },
-{ href: `/${teamId}/deployments`, label: "Deployments", icon: GitBranch },
+// { href: `/${teamId}/logs`, label: "Logs", icon: AlertTriangle },
+{ href: `/${teamId}/deployments`, label: "Pipeline", icon: GitBranch },
 { href: `/${teamId}/commits`, label: "Commits", icon: GitCommit },
 { href: `/${teamId}/services`, label: "Services", icon: ShieldCheck },
-{ href: `/${teamId}/tasks`, label: "Tasks", icon: CheckCircle2 },
-{ href: `/${teamId}/analytics`, label: "Analytics", icon: Clock3 },
-{ href: `/${teamId}/ai`, label: "AI Copilot", icon: Bot },
+// { href: `/${teamId}/tasks`, label: "Tasks", icon: CheckCircle2 },
+// { href: `/${teamId}/analytics`, label: "Analytics", icon: Clock3 },
+// { href: `/${teamId}/ai`, label: "AI Copilot", icon: Bot },
+{ href: `/${teamId}/team_settings`, label: "Team Settings", icon: Bot },
+
 ];
 
 

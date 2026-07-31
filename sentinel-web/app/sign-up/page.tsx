@@ -28,6 +28,8 @@ async function startSignUp(formData: FormData) {
   }
 
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const avatarUrl = user.user_metadata?.avatar_url; 
+
 
   if (!fullName) {
     redirect("/sign-up?error=missing-name");
@@ -47,8 +49,10 @@ async function startSignUp(formData: FormData) {
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: user.id,
     full_name: fullName,
+    email: user.email,
+    avatar_url: avatarUrl,
     onboarding_completed: false,
-    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
   });
 
   if (profileError) {
@@ -94,6 +98,11 @@ export default async function SignUpPage({ searchParams }: { searchParams: Searc
         </CardHeader>
         <CardContent>
           <form action={startSignUp} className="space-y-4">
+            <label className="block space-y-2 text-sm font-medium text-slate-700">
+              <span>Email address</span>
+              <Input value={user.email} disabled className="bg-slate-50 opacity-70" />
+            </label>
+
             <label className="block space-y-2 text-sm font-medium text-slate-700">
               <span>Full name</span>
               <Input name="full_name" required defaultValue={defaultName} placeholder="Asha Mehta" />

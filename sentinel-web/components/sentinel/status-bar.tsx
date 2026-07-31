@@ -3,6 +3,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { DailyHistory } from "@/lib/interface";
 
 
+const STATUS_COLORS = {
+  operational: "bg-emerald-500",
+  warning: "bg-amber-400",
+  critical: "bg-rose-500",
+  offline: "bg-slate-500",
+  "no-data": "bg-slate-200",
+} as const;
+
 export function StatusBar({ history }: { history: DailyHistory[] }) {
   // Ensure we have exactly 14 slots, filling empty ones if data is missing
   const segments = history.slice(-14);
@@ -14,10 +22,7 @@ export function StatusBar({ history }: { history: DailyHistory[] }) {
           <Tooltip key={i}>
             <TooltipTrigger asChild>
               <div
-                className={`flex-1 rounded-[2px] transition-opacity hover:opacity-80 ${
-                  day.status === "operational" ? "bg-emerald-500" :
-                  day.status === "warning" ? "bg-amber-400" : "bg-rose-500"
-                }`}
+                className={`flex-1 rounded-[2px] transition-opacity hover:opacity-80 ${STATUS_COLORS[day.status] ?? STATUS_COLORS["no-data"]}`}
               />
             </TooltipTrigger>
             <TooltipContent>

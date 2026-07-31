@@ -7,7 +7,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ teamI
   const { teamId } = await params;
 
   return (
-    <AppShell params={params}>
+    <AppShell teamId={teamId}>
       <PageHeader eyebrow="Workspace admin" title="Teams, Integrations & RBAC" action="Invite member" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="rounded-md">

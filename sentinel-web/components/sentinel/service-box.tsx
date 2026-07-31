@@ -2,37 +2,90 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { StatusBar } from "./status-bar";
+import type { ServiceState } from "@/lib/interface";
 
-export function ServiceCard({ serviceName, uptime, history, status, lastLatency, lastErrorRate}: { serviceName: string; uptime: number; history: any[]; status: string; lastLatency: number; lastErrorRate: string }) {
+const STATUS = {
+  "operational": {
+    text: "Healthy",
+    className: "bg-emerald-100 text-emerald-700"
+  },
+  "warning": {
+    text: "Warning",
+    className: "bg-amber-100 text-amber-700"
+  },
+  "critical": {
+    text: "Critical",
+    className: "bg-rose-100 text-rose-700"
+  },
+  "offline": {
+    text: "Offline",
+    className: "bg-slate-300 text-slate-700"
+  },
+  "no-data": {
+    text: "No Data",
+    className: "bg-slate-100 text-slate-500"
+  }
+};
 
+
+export function ServiceCard({ serviceName, uptime, history, status, lastLatency, lastErrorRate, requestRate }: { serviceName: string; uptime: number; history: any[]; status: ServiceState; lastLatency: number; lastErrorRate: string, requestRate: number }) {
+
+  const badge = STATUS[status];
 
   if (!serviceName) return <div className="h-32 animate-pulse bg-slate-100 rounded-md" />;
 
   // Get current status from the very last data point
 
-  
+
   return (
-    <div className="group cursor-pointer rounded-md border border-slate-200 p-4 hover:border-blue-400 transition-colors">
-      <div className="flex items-center justify-between mb-4">
-        <p className="font-semibold text-slate-900">{serviceName}</p>
-        <Badge 
-          className={
-            status === "operational" ? "bg-emerald-100 text-emerald-700" :
-            status === "warning" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"
-          }
+    <div className="group w-full rounded-lg border border-slate-200 p-5 hover:border-blue-400 transition-colors shadow-sm">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <p className="flex-1 font-semibold text-slate-900 break-words">{serviceName}</p>
+        <Badge
+          className={badge.className}
           variant="outline"
-        >
-          {status === "operational" ? "Healthy" : status === "warning" ? "Degraded" : "Down"}
+        > {badge.text}
         </Badge>
       </div>
 
       <StatusBar history={history} />
 
-      <div className="mt-3 grid grid-cols-3 text-[12px] font-medium text-slate-500">
-        <span>{uptime}% uptime</span>
-        {/* We take the last known values for real-time display */}
-        <span>{lastLatency}ms p95</span> 
-        <span>{lastErrorRate}% errors</span>
+      <div className="mt-4 grid grid-cols-4 gap-3 text-center">
+        <div>
+          <p className="text-base font-medium text-slate-900">
+            {uptime}%
+          </p>
+          <p className="text-xs text-slate-500">
+            Uptime
+          </p>
+        </div>
+
+        <div>
+          <p className="text-base font-medium text-slate-900">
+            {lastLatency} ms
+          </p>
+          <p className="text-xs text-slate-500">
+            P95
+          </p>
+        </div>
+
+        <div>
+          <p className="text-base font-medium text-slate-900">
+            {lastErrorRate}%
+          </p>
+          <p className="text-xs text-slate-500">
+            Errors
+          </p>
+        </div>
+
+        <div>
+          <p className="text-base font-medium text-slate-900">
+            {requestRate.toFixed(2)}
+          </p>
+          <p className="text-xs text-slate-500">
+            Req/s
+          </p>
+        </div>
       </div>
     </div>
   );

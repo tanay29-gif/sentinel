@@ -8,7 +8,7 @@ export default async function CommitsPage({ params }: { params: Promise<{ teamId
    const { teamId  } = await params;
 
   return (
-    <AppShell params={params}>
+<AppShell teamId={teamId}>
       <PageHeader eyebrow="Source control" title="Delivery pulse" action="Sync now" />
       <CommitsFeed teamId={teamId} />
     </AppShell>

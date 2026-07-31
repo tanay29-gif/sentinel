@@ -8,6 +8,9 @@ npm install @opentelemetry/sdk-node \
             @opentelemetry/semantic-conventions \
             @opentelemetry/host-metrics
 
+npm install pino
+pino-loki and all
+
 If the Node.js project then add this 
 
 

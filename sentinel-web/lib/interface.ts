@@ -27,6 +27,25 @@ import type { LucideIcon } from 'lucide-react';
 //   }
 // }
 
+// Incident Engine
+export interface IncidentInput {
+    source:
+        | "health"
+        | "grafana"
+        | "deployment_status"
+        | "workflow_run"
+        | "workflow_job"
+        | "push"
+        | "pull_request";
+
+    serviceId: string;
+
+    timestamp: Date;
+
+    payload: any;
+}
+
+
 export interface handleWorkflowRunPayload {
   action: string;
   repository: any;
@@ -148,15 +167,7 @@ export interface Commit {
   url?: string;
 }
 
-export interface Service {
-    id: string;
-    name: string;
-}
 
-export interface ServiceListProps {
-    ServicesNames: Service[];
-    allMetrics: Record<string, ServiceMetrics>; // Initial 14-day data from Server
-}
 
 
 export interface AppShellProps {
@@ -169,10 +180,38 @@ export interface PageHeaderProps {
   action?: React.ReactNode; // Ensure this is ReactNode
 }
 
+export interface Service {
+    id: string;
+    name: string;
+    base_url: string;
+}
+
+export interface ServiceListProps {
+    ServicesNames: Service[];
+    allMetrics: Record<string, ServiceMetrics>; // Initial 14-day data from Server
+}
+
 export interface DailyHistory {
   timestamp: number;
-  status: "operational" | "warning" | "critical";
+  status: ServiceState;
 }
+
+export type ServiceState =
+  | "no-data"
+  | "operational"
+  | "warning"
+  | "critical"
+  | "offline";
+
+export interface ServiceMetrics {
+  uptimePercentage: number;
+  dailyHistory: { timestamp: number; status: ServiceState }[];
+  lastLatency: number;
+  lastErrorRate: string;
+  requestRate: number;
+  currentStatus: ServiceState;
+}
+
 
 export interface NavItem {
   href: string;
@@ -180,53 +219,6 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-// export interface GitHubCommit {
-//   id: string;
-//   repo: string;
-//   branch: string;
-//   commit: string;
-//   message: string;
-//   author: string;
-//   time: string;
-//   url?: string;
-// }
-
-// export interface GitHubBranch {
-//   name: string;
-//   repo: string;
-//   lastCommit?: string;
-// }
-
-// export interface GitHubRepositoryResponse {
-//   full_name: string;
-// }
-
-// export interface GitHubCommitResponse {
-//   sha: string;
-//   html_url?: string;
-//   commit: {
-//     message: string;
-//     author: {
-//       name: string;
-//       date: string;
-//     };
-//   };
-// }
-
-// export interface GitHubBranchResponse {
-//   name: string;
-//   commit: {
-//     sha: string;
-//   };
-// }
-
-export interface ServiceMetrics {
-  uptimePercentage: number;
-  dailyHistory: { timestamp: number; status: string }[];
-  lastLatency: number;
-  lastErrorRate: string;
-  currentStatus: string;
-}
 
 export interface refreshWorkflowLogs {
   // supabase: SupabaseClient,

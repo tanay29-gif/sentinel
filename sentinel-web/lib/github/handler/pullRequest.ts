@@ -13,7 +13,9 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
     .eq("full_name", repository.full_name)
     .single();
 
-  if (!repoRecord) return;
+  if (!repoRecord){ 
+    return NextResponse.json({ success: false, message: "Repository not found" });
+  }
 
   console.log("repository fetched", repoRecord);
 
