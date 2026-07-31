@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { fetchInstalledRepositories, getWriteClient, syncInstallationData } from "@/lib/github-sync";
+import { fetchInstalledRepositories, getWriteClient, syncInstallationData } from "@/lib/github/github-sync";
 
 function slugify(value: FormDataEntryValue | null) {
   return String(value ?? "")

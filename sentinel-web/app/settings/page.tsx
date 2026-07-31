@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppShell } from "@/components/sentinel/app-shell";
 import { PageHeader } from "@/components/sentinel/page-header";
 
-export default function SettingsPage() {
+export default async function SettingsPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
+
   return (
-    <AppShell>
+    <AppShell teamId={teamId}>
       <PageHeader eyebrow="Workspace admin" title="Teams, Integrations & RBAC" action="Invite member" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="rounded-md">

@@ -18,7 +18,7 @@ export default function AuthPage() {
       const origin = window.location.origin;
       const callbackUrl = new URL("/auth/callback", origin).toString();
       
-      console.log("GitHub OAuth callback URL:", callbackUrl);
+      // console.log("GitHub OAuth callback URL:", callbackUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
@@ -28,7 +28,7 @@ export default function AuthPage() {
         },
       });
       
-      console.log("GitHub login data:", data);
+      // console.log("GitHub login data:", data);
 
       if (error) {
         console.error("GitHub login error:", error);

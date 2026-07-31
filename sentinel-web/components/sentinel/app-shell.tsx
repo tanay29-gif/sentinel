@@ -4,9 +4,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { currentUser, navItems } from "@/lib/data";
+import { currentUser, getNavItems, NavItem } from "@/lib/data";
+import type { AppShellProps } from "@/lib/interface";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+
+export function AppShell({ children, teamId }: {
+  children: React.ReactNode;
+  teamId: string;
+}) {
+  
+  const navItems: NavItem[] = getNavItems(teamId);
+
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-950">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">

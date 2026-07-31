@@ -1,21 +1,35 @@
+// components/sentinel/page-header.tsx
+import React from 'react';
 import { Button } from "@/components/ui/button";
+import type { PageHeaderProps } from "@/lib/interface";
 
-export function PageHeader({
-  title,
-  eyebrow,
-  action,
-}: {
-  title: string;
-  eyebrow: string;
-  action?: string;
-}) {
+
+
+export function PageHeader({ title, eyebrow, action }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex items-center justify-between mb-8">
       <div>
-        <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-700">{eyebrow}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
+          {eyebrow}
+        </p>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
       </div>
-      {action ? <Button className="w-fit bg-slate-950 text-white hover:bg-slate-800">{action}</Button> : null}
+
+      {action && (
+        <div>
+          {/* 
+            FIX: If the action is just text, use the standard Button.
+            If it's an object (like <AddServiceSidebar />), render it directly!
+          */}
+          {typeof action === "string" ? (
+            <Button className="bg-slate-950 hover:bg-slate-800 text-white">
+              {action}
+            </Button>
+          ) : (
+            action
+          )}
+        </div>
+      )}
     </div>
   );
 }

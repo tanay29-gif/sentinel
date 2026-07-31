@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getWriteClient, syncInstallationData } from "@/lib/github-sync";
+import { getWriteClient, syncInstallationData } from "@/lib/github/github-sync";
 
 export async function GET(request: Request) {
 
@@ -12,9 +12,9 @@ export async function GET(request: Request) {
   const installationId = url.searchParams.get("installation_id");
   const teamId = url.searchParams.get("state");
 
-  console.log("url ", request.url);
-  console.log("installationId ", installationId);
-  console.log("teamId ", teamId);
+  // console.log("url ", request.url);
+  // console.log("installationId ", installationId);
+  // console.log("teamId ", teamId);
 
   if (!installationId) {
     return NextResponse.redirect(new URL("/?error=missing-installation", baseUrl));
