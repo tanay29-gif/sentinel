@@ -1,0 +1,15 @@
+name: Incident Scheduler
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  incident-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Incident Scheduler
+        run: |
+          curl -X POST https://sentinal-brown.vercel.app/api/incident/run
