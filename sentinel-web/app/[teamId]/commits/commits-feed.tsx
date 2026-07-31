@@ -104,12 +104,22 @@ type CommitsFeedProps = {
   teamId: string;
 };
 
+// type Commit = {
+//   id: string;
+//   repo: string;
+//   branch: string | null;
+//   commit: string | undefined;
+//   message: string | null;
+//   author: string | null;
+//   time: string;
+//   url: string | null;
+// };
 
 export function CommitsFeed({ teamId }: CommitsFeedProps) {
 
   const supabase = createClient();
 
-  const [commits, setCommits] = useState<any[]>([]);
+  const [commits, setCommits] = useState<Commit[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [summary, setSummary] = useState({
     commitsToday: 0,

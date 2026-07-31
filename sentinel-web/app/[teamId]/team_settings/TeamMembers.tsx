@@ -23,17 +23,19 @@ type Props = {
     teamId: string;
 };
 
-interface Member {
-    id: string;
-    role: string;
-    user_id: string;
-    created_at: string;
-    profiles: {
-        id: string;
-        full_name: string;
-        email: string;
-        avatar_url: string | null;
-    } | null;
+type Profile = {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url: string | null;
+};
+
+type Member = {
+  id: string;
+  role: string;
+  user_id: string;
+  created_at: string;
+  profiles: Profile[];
 };
 
 export default async function TeamMembers({
@@ -76,7 +78,7 @@ export default async function TeamMembers({
     }
 
 
-    const { data: members = [], error: membersError } = await supabase
+    const { data: membersData = [], error: membersError } = await supabase
         .from("memberships")
         .select(
             `
@@ -95,12 +97,15 @@ export default async function TeamMembers({
         .eq("team_id", teamId)
         .order("created_at");
 
+
     if (membersError) {
         console.log(membersError)
     }
-    if (!members) return (
+    if (!membersData) return (
         <p>Loading...</p>
     )
+
+    const members = membersData as Member[];
 
     const userRole = myMembership?.role;
     const ownerCount = members.filter(
@@ -182,7 +187,7 @@ export default async function TeamMembers({
                             </p>
                         </div>
                     ) : (
-                        members.map((member: Member) => (
+                        members.map((member) => (
                             <div
                                 key={member.id}
                                 className="flex items-center justify-between rounded-md border border-slate-200 p-4"
@@ -190,22 +195,22 @@ export default async function TeamMembers({
                                 <div className="flex items-center gap-3">
                                     <Avatar className="size-11">
                                         <AvatarImage
-                                            src={member.profiles?.avatar_url ?? ""}
+                                            src={member.profiles[0]?.avatar_url ?? ""}
                                         />
 
                                         <AvatarFallback>
-                                            {member.profiles?.full_name?.charAt(0) ??
+                                            {member.profiles[0]?.full_name?.charAt(0) ??
                                                 "U"}
                                         </AvatarFallback>
                                     </Avatar>
 
                                     <div>
                                         <p className="font-medium text-slate-900">
-                                            {member.profiles?.full_name}
+                                            {member.profiles[0]?.full_name}
                                         </p>
 
                                         <p className="text-sm text-slate-500">
-                                            {member.profiles?.email}
+                                            {member.profiles[0]?.email}
                                         </p>
 
                                         <p className="mt-1 text-xs text-slate-400">
