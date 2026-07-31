@@ -35,7 +35,7 @@ type Member = {
   role: string;
   user_id: string;
   created_at: string;
-  profiles: Profile[];
+  profiles: Profile;
 };
 
 export default async function TeamMembers({
@@ -105,7 +105,9 @@ export default async function TeamMembers({
         <p>Loading...</p>
     )
 
-    const members = membersData as Member[];
+const members: Member[] = (membersData ?? []) as unknown as Member[];
+
+    console.log(members);
 
     const userRole = myMembership?.role;
     const ownerCount = members.filter(
@@ -195,22 +197,22 @@ export default async function TeamMembers({
                                 <div className="flex items-center gap-3">
                                     <Avatar className="size-11">
                                         <AvatarImage
-                                            src={member.profiles[0]?.avatar_url ?? ""}
+                                            src={member.profiles?.avatar_url ?? ""}
                                         />
 
                                         <AvatarFallback>
-                                            {member.profiles[0]?.full_name?.charAt(0) ??
+                                            {member.profiles?.full_name?.charAt(0) ??
                                                 "U"}
                                         </AvatarFallback>
                                     </Avatar>
 
                                     <div>
                                         <p className="font-medium text-slate-900">
-                                            {member.profiles[0]?.full_name}
+                                            {member.profiles?.full_name}
                                         </p>
 
                                         <p className="text-sm text-slate-500">
-                                            {member.profiles[0]?.email}
+                                            {member.profiles?.email}
                                         </p>
 
                                         <p className="mt-1 text-xs text-slate-400">
