@@ -22,7 +22,7 @@ export default async function handlePush(payload: HandlePushPayload) {
   }
 
 
-  console.log("repository fetched", repoRecord.team_id);
+  // console.log("repository fetched", repoRecord.team_id);
 
   const branchName = ref.replace("refs/heads/", "");
 
@@ -50,7 +50,7 @@ export default async function handlePush(payload: HandlePushPayload) {
     .single();
   ;
 
-  console.log("push_evnts table created", pushData?.id );
+  // console.log("push_evnts table created", pushData?.id );
 
   if (pushTableError || !pushData) {
     console.error("Push Table Error:", pushTableError);
@@ -79,7 +79,7 @@ export default async function handlePush(payload: HandlePushPayload) {
     }
 
 
-     console.log("commits created and worked")
+    //  console.log("commits created and worked")
     // 2. Generate the message details
     const details = getPushEventMessage(payload);
 

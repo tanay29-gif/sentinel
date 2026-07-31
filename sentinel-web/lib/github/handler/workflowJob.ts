@@ -60,9 +60,9 @@ const { workflow_job, repository } = payload;
     return NextResponse.json({ success: false, error: eventsError.message })
   }
 
-  console.log("workflow_events table created", eventsData?.id );
+  // console.log("workflow_events table created", eventsData?.id );
  
-  console.log("workflow_job worked");
+  // console.log("workflow_job worked");
   return NextResponse.json({ success: true, error: "Workflow_job worked perfect" })
 }
 

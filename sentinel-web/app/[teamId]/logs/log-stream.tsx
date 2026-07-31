@@ -59,7 +59,7 @@ export function LogStream() {
 
 
 
-  console.log("Rendering LogStream component with logs:", logs);
+  // console.log("Rendering LogStream component with logs:", logs);
   useEffect(() => {
     let isMounted = true;
 

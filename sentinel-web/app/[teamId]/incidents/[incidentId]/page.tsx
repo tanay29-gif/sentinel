@@ -154,8 +154,8 @@ export default function IncidentDetailsPage({
 
         setMessages(data.messages);
 
-        console.log("setGithubUrl",data.githubUrl)
-        console.log("setLogPath",data.logPath)
+        // console.log("setGithubUrl",data.githubUrl)
+        // console.log("setLogPath",data.logPath)
         setGithubUrl(data.githubUrl);
         setUserRole(data.userRole);
         setLogPath(data.logPath);
@@ -236,7 +236,7 @@ export default function IncidentDetailsPage({
           : prev
       );
 
-      router.refresh();
+      router.push(`/${teamId}/incidents`);
     }
   }
 

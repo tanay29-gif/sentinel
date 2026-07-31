@@ -17,7 +17,7 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
     return NextResponse.json({ success: false, message: "Repository not found" });
   }
 
-  console.log("repository fetched", repoRecord);
+  // console.log("repository fetched", repoRecord);
 
     // 3. Log the event for the Dashboard timeline
   const details = getPullRequestEventMessage(
@@ -50,7 +50,7 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
 
   if (prError || !prRecord) return;
 
-  console.log("row created inthe workflowRun", prRecord.id);
+  // console.log("row created inthe workflowRun", prRecord.id);
 
 
   await supabaseAdmin.from("workflow_events").insert({
@@ -67,7 +67,7 @@ export default async function handlePullRequest(payload: HandlePullRequestPayloa
 
   if (prError) throw prError;
 
-  console.log("workflow events created ");
+  // console.log("workflow events created ");
 
   return NextResponse.json({
     success: true,

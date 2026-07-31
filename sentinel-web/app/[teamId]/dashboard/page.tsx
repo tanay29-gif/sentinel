@@ -1,294 +1,611 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Clock3, GitBranch, ListTree } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppShell } from "@/components/sentinel/app-shell";
-import { MetricCard } from "@/components/sentinel/metric-card";
 import { PageHeader } from "@/components/sentinel/page-header";
-import { deployments, incidents, logs as mockLogs, services, timeline } from "@/lib/data";
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Activity,
+  AlertTriangle,
+  Box,
+  GitBranch,
+  Server,
+  Clock,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
-type Repository = {
-  id: string;
-  name: string;
-  full_name: string;
-  html_url: string | null;
-  default_branch: string | null;
-};
 
-type Branch = {
-  id: string;
-  repository_id: string;
-  name: string;
-  is_default: boolean | null;
-};
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ teamId: string }>;
+}) {
 
-type Commit = {
-  id: string;
-  repository_id: string;
-  sha: string;
-  message: string;
-  author_handle: string | null;
-  committed_at: string;
-};
-
-type LogRow = {
-  id: string;
-  level: string;
-  message: string;
-  job_name: string | null;
-  created_at: string;
-};
-
-type Params = Promise<{ teamId: string }>;
-
-export default async function DashboardPage({ params }: { params: Params }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth");
-  }
 
   const { teamId } = await params;
-  
+  const supabase = await createClient();
+  // Replace these in Part 2
 
-  let membershipQuery = supabase
-    .from("memberships")
-    .select("team_id, teams(name, github_installation_id)")
-    .eq("user_id", user.id);
 
-  if (teamId) {
-    membershipQuery = membershipQuery.eq("team_id", teamId);
-  }
 
-  const { data: membership } = await membershipQuery.limit(1).maybeSingle();
+  // const services: any[] = [];
+  // const incidents: any[] = [];
+  // const workflowRuns: any[] = [];
+  // const deployments: any[] = [];
+  // const timeline: any[] = [];
+  // const messages: any[] = [];
 
-  if (!membership?.team_id) {
-    redirect("/");
-  }
+  // ---------------------- Services ----------------------
 
-  const team = Array.isArray(membership.teams) ? membership.teams[0] : membership.teams;
+  const { data: servicesData } = await supabase
+    .from("services")
+    .select("id,name,health,uptime")
+    .eq("team_id", teamId)
+    .order("name");
 
-  if (!team?.github_installation_id) {
-    redirect(`/installation?team_id=${membership.team_id}`);
-  }
+  const services = servicesData ?? [];
+  // ---------------------- Active Incidents ----------------------
 
-  const [{ data: repositories }, { data: branches }, { data: commits }, { data: syncedLogs }] = await Promise.all([
-    supabase
-      .from("repositories")
-      .select("id, name, full_name, html_url, default_branch")
-      .eq("team_id", membership.team_id)
-      .order("updated_at", { ascending: false }),
-    supabase.from("branches").select("id, repository_id, name, is_default").order("is_default", { ascending: false }),
-    supabase
-      .from("commits")
-      .select("id, repository_id, sha, message, author_handle, committed_at")
-      .order("committed_at", { ascending: false })
-      .limit(25),
-    supabase
-      .from("logs")
-      .select("id, level, message, job_name, created_at")
-      .eq("team_id", membership.team_id)
-      .order("created_at", { ascending: false })
-      .limit(5),
-  ]);
+  const { data: incidentsData = [], error: incidentsError} = await supabase
+    .from("incidents")
+    .select(`
+    id,
+    title,
+    summary,
+    severity,
+    status,
+    created_at,
+    services(name)
+  `)
+    .eq("team_id", teamId)
+    .neq("status", "Resolved")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
-  const repoRows = (repositories ?? []) as Repository[];
-  const branchRows = (branches ?? []) as Branch[];
-  const commitRows = (commits ?? []) as Commit[];
-  const logRows = (syncedLogs ?? []) as LogRow[];
-  const repoById = new Map(repoRows.map((repo) => [repo.id, repo]));
+  const incidents = incidentsData ?? [];
+  // if(incidentsError) console.log(incidentsError);
+
+  // ---------------------- Workflow Runs ----------------------
+
+  const { data: workflowRunsData = [] } = await supabase
+    .from("workflow_runs")
+    .select(`
+    id,
+    workflow_name,
+    branch,
+    status,
+    conclusion,
+    actor,
+    created_at
+  `)
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const workflowRuns = workflowRunsData ?? [];
+
+
+  // ---------------------- Deployments ----------------------
+
+  const { data: deploymentsData = [], error: deploymentsError} = await supabase
+    .from("deployments")
+    .select(`
+    id,
+    repository_full_name,
+    environment,
+    status,
+    created_at
+  `)
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const deployments = deploymentsData ?? [];
+  // if(deploymentsError) console.log(deploymentsError);
+
+  // ---------------------- Workflow Timeline ----------------------
+
+  const { data: workflowEventsData = [] } = await supabase
+    .from("workflow_events")
+    .select(`
+    id,
+    title,
+    description,
+    status,
+    created_at
+  `)
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: false })
+    .limit(15);
+
+  const workflowEvents = workflowEventsData ?? [];
+
+
+  // ---------------------- Incident Timeline ----------------------
+
+  const incidentIds =
+    incidents.length > 0
+      ? incidents.map(i => i.id)
+      : [];
+
+  const { data: incidentEventsData = [] } =
+    incidentIds.length === 0
+      ? { data: [] }
+      : await supabase
+        .from("incident_events")
+        .select(`
+          id,
+          event,
+          source,
+          created_at,
+          incident_id
+        `)
+        .in("incident_id", incidentIds)
+        .order("created_at", { ascending: false })
+        .limit(15);
+
+  const incidentEvents = incidentEventsData ?? [];
+
+  // ---------------------- Latest Incident Messages ----------------------
+
+  const { data: channelsData = [] } = incidentIds.length
+    ? await supabase
+      .from("incident_channels")
+      .select("id")
+      .in("incident_id", incidentIds)
+    : { data: [] };
+
+  const channels = channelsData ?? [];
+
+
+  const channelIds =
+    channels.length > 0
+      ? channels.map(c => c.id)
+      : [];
+
+const { data: messagesData = [] } =
+  channelIds.length === 0
+    ? { data: [] }
+    : await supabase
+        .from("incident_messages")
+        .select(`
+          id,
+          message,
+          created_at,
+          sender_id,
+          profiles!incident_messages_sender_id_fkey (
+            full_name
+          )
+        `)
+        .in("channel_id", channelIds)
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+        // console.log(messagesData);
+  const messages = messagesData ?? [];
+  // ---------------------- Metric Cards ----------------------
+
+  const stats = {
+    services: services.length,
+
+    incidents: incidents.length,
+
+    failedRuns: workflowRuns.filter(
+      (r) =>
+        r.conclusion === "failure" ||
+        r.status === "failure"
+    ).length,
+
+    deployments: deployments.length,
+  };
+
+  // ---------------------- Unified Timeline ----------------------
+
+  const timeline = [
+    ...(workflowEvents ?? []).map((e) => ({
+      id: e.id,
+      type: "workflow",
+      event: e.title ?? e.description,
+      status: e.status,
+      created_at: e.created_at,
+    })),
+
+    ...(incidentEvents ?? []).map((e) => ({
+      id: e.id,
+      type: "incident",
+      event: e.event,
+      status: e.source,
+      created_at: e.created_at,
+    })),
+  ]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
+    .slice(0, 20);
 
   return (
     <AppShell teamId={teamId}>
-      <PageHeader eyebrow={team.name} title="Sentinel dashboard" action="Create incident" />
+      <PageHeader
+        eyebrow="Overview"
+        title="Dashboard"
+      />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Repositories synced" value={String(repoRows.length)} detail="From the installed GitHub App" icon={GitBranch} tone="emerald" />
-        <MetricCard title="Branches tracked" value={String(branchRows.length)} detail="All selected repository branches" icon={ListTree} tone="slate" />
-        <MetricCard title="Recent commits" value={String(commitRows.length)} detail="Latest five per synced repository" icon={GitBranch} tone="amber" />
-        <MetricCard title="Workflow logs" value={String(logRows.length)} detail="Latest GitHub Actions runs" icon={Clock3} tone="red" />
-      </section>
+      {/* ================= Metrics ================= */}
 
-      <section className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Repositories</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {repoRows.length ? (
-              repoRows.map((repo) => {
-                const repoBranches = branchRows.filter((branch) => branch.repository_id === repo.id);
-                return (
-                  <div key={repo.id} className="rounded-md border border-slate-200 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{repo.full_name}</p>
-                        <p className="text-sm text-slate-500">{repoBranches.length} branches tracked</p>
-                      </div>
-                      <Badge variant="outline">{repo.default_branch ?? "main"}</Badge>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {repoBranches.slice(0, 8).map((branch) => (
-                        <Badge key={branch.id} variant={branch.is_default ? "secondary" : "outline"}>
-                          {branch.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-slate-500">No repositories synced yet.</p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
 
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Latest Commits</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {commitRows.slice(0, 10).map((commit) => {
-              const repo = repoById.get(commit.repository_id);
-              return (
-                <div key={commit.id} className="rounded-md border border-slate-200 p-3 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium">{repo?.full_name ?? "Repository"}</span>
-                    <span className="font-mono text-xs text-slate-500">{commit.sha.slice(0, 7)}</span>
-                  </div>
-                  <p className="mt-2 text-slate-700">{commit.message}</p>
-                  <p className="mt-1 text-xs text-slate-500">{commit.author_handle ?? "Unknown author"}</p>
-                </div>
-              );
-            })}
-            {!commitRows.length ? <p className="text-sm text-slate-500">No commits synced yet.</p> : null}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="mt-6 grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Last 5 Workflow Logs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {logRows.map((log) => (
-              <div key={log.id} className="rounded-md bg-slate-50 p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <Badge variant={log.level === "ERROR" ? "destructive" : "secondary"}>{log.level}</Badge>
-                  <span className="text-xs text-slate-500">{log.job_name ?? "GitHub Actions"}</span>
-                </div>
-                <p className="mt-2">{log.message}</p>
-              </div>
-            ))}
-            {!logRows.length ? <p className="text-sm text-slate-500">No workflow logs synced yet.</p> : null}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Incident Triage</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {incidents.map((incident) => (
-              <Link
-                key={incident.id}
-                href={`/incidents/${incident.id === "INC-1042" ? "INC-1042" : ""}`}
-                className="block rounded-md border border-slate-200 p-4 hover:bg-slate-50"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={incident.severity === "SEV-1" ? "destructive" : "secondary"}>{incident.severity}</Badge>
-                  <Badge variant="outline">{incident.status}</Badge>
-                  <span className="text-xs text-slate-500">{incident.started}</span>
-                </div>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium">{incident.title}</p>
-                    <p className="text-sm text-slate-500">{incident.summary}</p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Open
-                  </Button>
-                </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Card className="rounded-md lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Event Timeline</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {timeline.map((item) => (
-                <div key={`${item.time}-${item.source}`} className="grid grid-cols-[64px_96px_1fr] gap-3 text-sm">
-                  <span className="font-mono text-slate-500">{item.time}</span>
-                  <Badge variant="outline">{item.source}</Badge>
-                  <span>{item.event}</span>
-                </div>
-              ))}
+        <Card>
+          <CardContent className="flex items-center justify-between py-6">
+            <div>
+              <p className="text-sm text-slate-500">
+                Services
+              </p>
+              <p className="mt-2 text-3xl font-bold">
+                {stats.services}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle>Live Signals</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {mockLogs.slice(0, 4).map((log) => (
-              <div key={`${log.time}-${log.trace}`} className="rounded-md bg-slate-50 p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <Badge variant={log.level === "ERROR" ? "destructive" : "secondary"}>{log.level}</Badge>
-                  <span className="font-mono text-xs text-slate-500">{log.time}</span>
-                </div>
-                <p className="mt-2">{log.message}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
 
-      <section className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="rounded-md">
+            <Server className="h-9 w-9 text-slate-400" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center justify-between py-6">
+            <div>
+              <p className="text-sm text-slate-500">
+                Active Incidents
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-red-600">
+                {stats.incidents}
+              </p>
+            </div>
+
+            <AlertTriangle className="h-9 w-9 text-red-500" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center justify-between py-6">
+            <div>
+              <p className="text-sm text-slate-500">
+                Failed Workflow Runs
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-orange-600">
+                {stats.failedRuns}
+              </p>
+            </div>
+
+            <GitBranch className="h-9 w-9 text-orange-500" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center justify-between py-6">
+            <div>
+              <p className="text-sm text-slate-500">
+                Deployments
+              </p>
+
+              <p className="mt-2 text-3xl font-bold">
+                {stats.deployments}
+              </p>
+            </div>
+
+            <Box className="h-9 w-9 text-sky-500" />
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* ================= Service Health ================= */}
+
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+
+        <Card>
+
           <CardHeader>
-            <CardTitle>Service Health</CardTitle>
+
+            <CardTitle>
+              Service Health
+            </CardTitle>
+
           </CardHeader>
-          <CardContent className="space-y-3">
+
+          <CardContent className="space-y-4">
+
+            {services.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No services found.
+              </p>
+            )}
+
             {services.map((service) => (
-              <div key={service.name} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <span className="font-medium">{service.name}</span>
-                <span className="text-slate-500">{service.uptime}</span>
-                <Badge variant={service.health === "Healthy" ? "secondary" : "destructive"}>{service.health}</Badge>
+              <div
+                key={service.id}
+                className="flex items-center justify-between rounded-lg border p-4"
+              >
+                <div>
+                  <p className="font-medium">
+                    {service.name}
+                  </p>
+
+                  <p className="text-xs text-slate-500">
+                    {service.health}
+                  </p>
+                </div>
+
+                <Badge>
+                  {service.health}
+                </Badge>
               </div>
             ))}
+
           </CardContent>
+
         </Card>
-        <Card className="rounded-md">
+
+        {/* ================= Recent Incidents ================= */}
+
+        <Card>
+
           <CardHeader>
-            <CardTitle>Deployment Watch</CardTitle>
+
+            <CardTitle>
+              Recent Incidents
+            </CardTitle>
+
           </CardHeader>
-          <CardContent className="space-y-3">
-            {deployments.map((deployment) => (
-              <div key={deployment.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <span>
-                  <span className="font-medium">{deployment.repo}</span>
-                  <span className="ml-2 font-mono text-xs text-slate-500">{deployment.commit}</span>
-                </span>
-                <Badge variant={deployment.status === "Suspect" ? "destructive" : "outline"}>{deployment.status}</Badge>
+
+          <CardContent className="space-y-4">
+
+            {incidents.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No incidents.
+              </p>
+            )}
+
+            {incidents.map((incident) => (
+              <div
+                key={incident.id}
+                className="rounded-lg border p-4"
+              >
+                <div className="flex items-center justify-between">
+
+                  <p className="font-medium">
+                    {incident.title}
+                  </p>
+
+                  <Badge>
+                    {incident.severity}
+                  </Badge>
+
+                </div>
+
+                <p className="mt-2 text-sm text-slate-600">
+                  {incident.summary}
+                </p>
+
               </div>
             ))}
+
           </CardContent>
+
         </Card>
-      </section>
+
+      </div>
+
+      {/* ================= Workflow Runs ================= */}
+
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+
+        <Card>
+
+          <CardHeader>
+
+            <CardTitle>
+              Workflow Runs
+            </CardTitle>
+
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+
+            {workflowRuns.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No workflow runs.
+              </p>
+            )}
+
+            {workflowRuns.map((run) => (
+              <div
+                key={run.id}
+                className="rounded-lg border p-4"
+              >
+                <div className="flex items-center justify-between">
+
+                  <div>
+
+                    <p className="font-medium">
+                      {run.workflow_name}
+                    </p>
+
+                    <p className="text-xs text-slate-500">
+                      {run.branch}
+                    </p>
+
+                  </div>
+
+                  <Badge>
+                    {run.status}
+                  </Badge>
+
+                </div>
+
+              </div>
+            ))}
+
+          </CardContent>
+
+        </Card>
+
+        {/* ================= Deployments ================= */}
+
+        <Card>
+
+          <CardHeader>
+
+            <CardTitle>
+              Deployments
+            </CardTitle>
+
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+
+            {deployments.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No deployments.
+              </p>
+            )}
+
+            {deployments.map((deployment) => (
+              <div
+                key={deployment.id}
+                className="rounded-lg border p-4"
+              >
+                <div className="flex items-center justify-between">
+
+                  <div>
+
+                    <p className="font-medium">
+                      {deployment.environment}
+                    </p>
+
+                    <p className="text-xs text-slate-500">
+                      {deployment.repository_full_name}
+                    </p>
+
+                  </div>
+
+                  <Badge>
+                    {deployment.status}
+                  </Badge>
+
+                </div>
+
+              </div>
+            ))}
+
+          </CardContent>
+
+        </Card>
+
+      </div>
+
+      {/* ================= Unified Timeline ================= */}
+
+      <Card className="mt-8">
+
+        <CardHeader>
+
+          <CardTitle>
+            Activity Timeline
+          </CardTitle>
+
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          {timeline.length === 0 && (
+            <p className="text-sm text-slate-500">
+              No events.
+            </p>
+          )}
+
+          {timeline.map((event) => (
+            <div
+              key={event.id}
+              className="flex gap-4 border-l-2 pl-4"
+            >
+              <Clock className="mt-1 h-4 w-4 text-slate-400" />
+
+              <div>
+
+                <p className="font-medium">
+                  {event.event}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                  {event.created_at}
+                </p>
+
+              </div>
+
+            </div>
+          ))}
+
+        </CardContent>
+
+      </Card>
+
+      {/* ================= Incident Messages ================= */}
+
+      <Card className="mt-8">
+
+        <CardHeader>
+
+          <CardTitle>
+            Latest Incident Messages
+          </CardTitle>
+
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          {messages.length === 0 && (
+            <p className="text-sm text-slate-500">
+              No messages.
+            </p>
+          )}
+
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className="rounded-lg border p-4"
+            >
+              <div className="flex items-center justify-between">
+
+                {/* <p className="font-medium">
+                  {message.profiles?.full_name}
+                </p> */}
+
+                <Badge variant="secondary">
+                  Chat
+                </Badge>
+
+              </div>
+
+              <p className="mt-2 text-sm">
+                {message.message}
+              </p>
+
+            </div>
+          ))}
+
+        </CardContent>
+
+      </Card>
+
     </AppShell>
   );
 }

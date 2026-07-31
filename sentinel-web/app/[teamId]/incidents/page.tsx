@@ -134,7 +134,7 @@ export default function IncidentsPage({ params }: { params: Promise<{ teamId: st
   return (
     <AppShell teamId={teamId}>
       <PageHeader eyebrow="Triage queue" title="Incidents" action={<CreateIncidentSidebar />}
- />
+      />
       <Card className="rounded-md">
         <CardHeader>
           <CardTitle>Real-time Incident Dashboard</CardTitle>
@@ -204,18 +204,12 @@ export default function IncidentsPage({ params }: { params: Promise<{ teamId: st
 
                     </div>
 
-                    {hasInvestigateAccess && (
-
+                    {hasInvestigateAccess && incident.status !== "Resolved" && (
                       <Button asChild>
-
                         <Link href={`/${teamId}/incidents/${incident.id}`}>
-
                           Investigate
-
                         </Link>
-
                       </Button>
-
                     )}
 
                   </div>

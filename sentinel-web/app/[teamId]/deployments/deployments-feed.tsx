@@ -626,8 +626,8 @@ export function DeploymentsFeed() {
 
       const nextRuns = mapWorkflowRuns(workflowRuns, deployments, workflowEvents, workflowJobs, workflowSteps, workflowLogs);
 
-      console.log("Next Runs", nextRuns); 
-      console.log("Next Runs[0].failureDetails]", nextRuns[0].failureDetails); 
+      // console.log("Next Runs", nextRuns); 
+      // console.log("Next Runs[0].failureDetails]", nextRuns[0].failureDetails); 
 
       setRuns(nextRuns);
       setSelectedRunId((current) => current ?? nextRuns[0]?.id ?? null);
@@ -655,7 +655,7 @@ export function DeploymentsFeed() {
 
   const selectedRun = useMemo(() => runs.find((run) => run.id === selectedRunId) ?? runs[0] ?? null, [runs, selectedRunId]);
 
-    console.log("Selected Run:", selectedRun);
+    // console.log("Selected Run:", selectedRun);
 
   const selectedFailureJob = useMemo(() => {
     if (!selectedRun) {

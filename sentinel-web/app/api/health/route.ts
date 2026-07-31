@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
             signal: AbortSignal.timeout(5000),
             cache: "no-store",
         });
-      console.log(response.ok)
+    //   console.log(response.ok)
         return NextResponse.json({
             ok: response.ok,
             status: response.status,

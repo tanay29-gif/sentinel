@@ -39,14 +39,14 @@ export default function ServiceListClient({ ServicesNames, allMetrics }: Service
             metrics?: ServiceMetrics
         ): Promise<"operational" | "offline" | "no-data"> {
             try {
-                console.log("fetching =", `${baseUrl}/health`);
+                // console.log("fetching =", `${baseUrl}/health`);
                 const response = await fetch(
                     `/api/health?baseUrl=${encodeURIComponent(baseUrl)}`
                 );
 
                 const data = await response.json();
                 
-                console.log(response);
+                // console.log(response);
 
                 if (!data.ok) {
                     return "offline";

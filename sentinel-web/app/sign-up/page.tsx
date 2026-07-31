@@ -64,7 +64,7 @@ async function startSignUp(formData: FormData) {
   const installUrl = new URL(`https://github.com/apps/${githubAppSlug}/installations/new`);
   installUrl.searchParams.set("state", "onboarding");
 
-  console.log("Redirecting to GitHub App installation at", installUrl.toString());
+  // console.log("Redirecting to GitHub App installation at", installUrl.toString());
   redirect(installUrl.toString());
 }
 

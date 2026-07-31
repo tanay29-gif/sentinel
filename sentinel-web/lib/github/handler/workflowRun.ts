@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 export default async function handleWorkflowRun(payload: handleWorkflowRunPayload) {
   const repository = payload.repository;
 
-  console.log("repository_id", repository.id);
+  // console.log("repository_id", repository.id);
   // add it into the tablel there is change so add it
 
   const { data: repositoryRecord, error: repositoryError } =
@@ -24,7 +24,7 @@ export default async function handleWorkflowRun(payload: handleWorkflowRunPayloa
     return NextResponse.json({ success: false, message: "Repository not registered" });
   }
 
-  console.log("repository fetched", repositoryRecord.team_id);
+  // console.log("repository fetched", repositoryRecord.team_id);
 
   const {data: workflowRunRecord, error: workflowRunError} = await supabaseAdmin
     .from("workflow_runs")
@@ -61,7 +61,7 @@ if (workflowRunError || !workflowRunRecord) {
   return NextResponse.json({ success: false, message: "Error or no record found of actions" }); 
 }
 
-console.log("Workflow table created", workflowRunRecord.id);
+// console.log("Workflow table created", workflowRunRecord.id);
 
   if (payload.workflow_run.conclusion !== "failure") {
     if (payload.workflow_run.conclusion === "success") {
@@ -73,7 +73,7 @@ console.log("Workflow table created", workflowRunRecord.id);
 
   }
 
-  console.log("canme to failure part");
+  // console.log("canme to failure part");
 
   const { data: teamData, error: teams_error } = await supabaseAdmin
     .from("teams")
@@ -86,7 +86,7 @@ console.log("Workflow table created", workflowRunRecord.id);
     return NextResponse.json({ success: false, message: "GitHub installation ID not found" });
   }
 
-  console.log("github_installation_id", teamData.github_installation_id);
+  // console.log("github_installation_id", teamData.github_installation_id);
 
   const octokit = await getInstallationClient(teamData.github_installation_id);
 
@@ -104,7 +104,7 @@ console.log("Workflow table created", workflowRunRecord.id);
     return NextResponse.json({ success: false, message: "No jobs found for workflow run" });
   }
 
-  console.log("came to the jobs_update part");
+  // console.log("came to the jobs_update part");
 
   for (const job of workflowJobsData.jobs) {
     if (job.conclusion !== "failure") continue;
@@ -183,7 +183,7 @@ console.log("Workflow table created", workflowRunRecord.id);
           return NextResponse.json({ success: false, message: "stepError" });
         }
 
-        console.log("workflow_jobs and the steps created", workflowJobRecord.id);
+        // console.log("workflow_jobs and the steps created", workflowJobRecord.id);
     }
   }
 
@@ -225,7 +225,7 @@ console.log("Workflow table created", workflowRunRecord.id);
     return NextResponse.json({ success: false, message: "Log Upload Error" })
 
   }
-  console.log("log uploaded to the storage");
+  // console.log("log uploaded to the storage");
 
   // 4. Insert metadata into the Database
   const { error: dbError } = await supabaseAdmin
